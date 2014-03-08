@@ -1,4 +1,4 @@
 cinsim
 ======
 
-C++ - CInsim - A basic C++ InSim library
+A basic C++ InSim library
