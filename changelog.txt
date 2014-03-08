@@ -1,0 +1,36 @@
+Changelog:
+
+0.7 (Thanks to MadCatX for major improvements in this version)
+---
+Supports all new InSim changes introduced as of LFS 0.6C.
+Updated send_packet(). It now properly handles both IS_BTN and IS_MTC packets and sends only the amount of data that is needed.
+Removed send_button() as it is no longer needed (this breaks compatibility with old apps).
+Simplified next_packet() and udp_next_packet().
+Got rid of 100% CPU load caused by next_packet() on Linux systems by replacing select() for pselect() (other *NIX systems that use their own standard C library might exhibit a different behavior).
+
+0.6
+---
+Added support for *NIX platforms. You only have to change in the insim.h file the "#define CIS_WINDOWS" preprocessor directive to CIS_LINUX, and you are ready to compile the lib under UNIX/Linux with the exact same functionality. (Portability code provided by MadCatX)
+The additional function mstrostr() only uses ANSI-C functions now to ensure platform portability. All the occurrences of itoa() have been replaced by sprintf().
+
+0.51
+----
+Fix for the send_button() method. Now it's thread-safe, there was a small typo in one line.
+The additional function mstrostr() has been renamed to ms2str() and now has an optional third parameter to indicate if the resulting string will contain hundredths of second (default) or thousandths of second.
+
+0.5
+---
+New method called send_button(), used to send BTN packets of variable size. Up until now button packets were always 240 chars long in the text field, thus producing a big network overhead when a lot of buttons were sent. Now you have to create a button struct and fill it to your desire. The send_button method calculates the text length and only sends the appropiate amount of data. It also refills the 'Size' field of the struct based on the text length so you don't have to worry about that.
+Fix for the thread-safe send_packet() method. Actually, it was supposed to have been updated in the V0.4 but it never was because I didn't add a couple of lines... Now it's suppossed to be working fine.
+
+0.4
+---
+Now uses pthreads-w32 for thread-safe send_packet() method (several threads can use safely the send_packet() without overlapping). Before it had to be controlled by the application programmer.
+
+0.31
+----
+Adds all changes done to insim as of LFS S2 0.5Z28
+
+0.3
+---
+First stable version.
