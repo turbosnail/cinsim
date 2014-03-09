@@ -151,8 +151,10 @@ class CInsim
     void SendPLC (byte UCID, unsigned PLC);
     void SendButton(byte ReqI,byte UCID, byte ClickID,byte Left, byte Top, byte Width, byte Height,byte BStyle, std::string Text);
     void SendButton(byte ReqI,byte UCID, byte ClickID,byte Left, byte Top, byte Width, byte Height,byte BStyle, std::string Text, byte TypeIn);
-    void SendTiny(byte Type);
-    void SendTiny(byte Type, byte ReqI);
+    void SendTiny(byte SubT);
+    void SendTiny(byte SubT, byte ReqI);
+    void SendSmall(byte SubT, unsigned UVal);
+    void SendSmall(byte SubT, unsigned UVal, byte ReqI);
 };
 
 
