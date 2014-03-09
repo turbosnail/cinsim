@@ -65,19 +65,19 @@ typedef struct
  */
 #define CIS_WINDOWS
 
+#include <stdio.h>
+#include <string.h>
+#include <string>
+
 // Includes for Windows (uses winsock2)
 #ifdef CIS_WINDOWS
 #include <winsock2.h>
-#include <stdio.h>
-#include <string.h>
 #include "pthread.h"
 
 // Includes for *NIX (no winsock2, these headers are needed instead)
 #elif defined CIS_LINUX
-#include <stdio.h>
 #include <pthread.h>
 #include <limits.h>
-#include <string.h>
 #include <netdb.h>
 #include <sys/types.h>
 #include <netinet/in.h>
@@ -142,6 +142,17 @@ class CInsim
     int udp_next_packet();              // (UDP) Gets next packet ready into "char udp_packet[]"
     char udp_peek_packet();             // (UDP) Returns the type of the current packet
     void* udp_get_packet();             // (UDP) Returns a pointer to the current packet. Must be casted
+
+    void SendMST(std::string Text);
+    void SendMSX(std::string Text);
+    void SendMTC(byte UCID, std::string Text);
+    void SendBFN(byte UCID, byte ClickID);
+    void SendBFNAll(byte UCID);
+    void SendPLC (byte UCID, unsigned PLC);
+    void SendButton(byte ReqI,byte UCID, byte ClickID,byte Left, byte Top, byte Width, byte Height,byte BStyle, std::string Text);
+    void SendButton(byte ReqI,byte UCID, byte ClickID,byte Left, byte Top, byte Width, byte Height,byte BStyle, std::string Text, byte TypeIn);
+    void SendTiny(byte Type);
+    void SendTiny(byte Type, byte ReqI);
 };
 
 
