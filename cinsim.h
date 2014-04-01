@@ -63,11 +63,16 @@ typedef struct
 /* Defines whether the Windows or Linux part of the source will be compiled.
  * Options are CIS_WINDOWS or CIS_LINUX
  */
+#ifdef __linux__
+#define CIS_LINUX
+#elif _WIN32
 #define CIS_WINDOWS
+#endif
 
 #include <stdio.h>
 #include <string.h>
 #include <string>
+#include <cstdarg>
 
 // Includes for Windows (uses winsock2)
 #ifdef CIS_WINDOWS
@@ -94,8 +99,8 @@ typedef struct
 // Definition for our buffer datatype
 struct packBuffer
 {
-	char buffer[PACKET_BUFFER_SIZE];    // Packet buffer - 512 should be more than enough
-	unsigned int bytes;                 // Number of bytes currently in buffer
+    char buffer[PACKET_BUFFER_SIZE];    // Packet buffer - 512 should be more than enough
+    unsigned int bytes;                 // Number of bytes currently in buffer
 };
 
 /**
@@ -119,6 +124,7 @@ class CInsim
     #ifdef CIS_WINDOWS
     struct timeval select_timeout;          // timeval struct for the select() call
     #elif defined CIS_LINUX
+
     struct timespec select_timeout;        // timeval struct for the pselect() call
     #endif
     struct packBuffer udp_lbuf;                 // (for NLP and MCI packets via UDP) Our local buffer (no global buffer needed for UDP)
@@ -147,6 +153,8 @@ class CInsim
     void SendMSX(std::string Text);
     void SendMTC(byte UCID, std::string Text);
     void SendBFN(byte UCID, byte ClickID);
+    void SendBFN(byte UCID, byte ClickIdFrom, byte ClickIdTo);
+    void SendBFN(byte UCID, ...);
     void SendBFNAll(byte UCID);
     void SendPLC (byte UCID, unsigned PLC);
     void SendButton(byte ReqI,byte UCID, byte ClickID,byte Left, byte Top, byte Width, byte Height,byte BStyle, std::string Text);
