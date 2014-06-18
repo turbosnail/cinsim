@@ -92,8 +92,7 @@ int CInsim::init (char *addr, word port, char *product, char *admin, struct IS_V
 	// Only required on Windows
 	#ifdef CIS_WINDOWS
 	WSADATA wsadata;
-	if (WSAStartup(0x202, &wsadata) == SOCKET_ERROR)
-	{
+	if (WSAStartup(0x202, &wsadata) == SOCKET_ERROR) {
 	  WSACleanup();
 	  return -1;
 	}
@@ -103,8 +102,7 @@ int CInsim::init (char *addr, word port, char *product, char *admin, struct IS_V
 	sock = socket(AF_INET, SOCK_STREAM, 0);
 
 	// Could we get the socket handle? If not the OS might be too busy or has run out of available socket descriptors
-	if (sock == INVALID_SOCKET)
-	{
+	if (sock == INVALID_SOCKET) {
 	  #ifdef CIS_WINDOWS
 	  closesocket(sock);
 	  WSACleanup();
@@ -133,8 +131,7 @@ int CInsim::init (char *addr, word port, char *product, char *admin, struct IS_V
 	saddr.sin_port = htons(port);
 
 	// Now the socket address structure is full, lets try to connect
-	if (connect(sock, (struct sockaddr *) &saddr, sizeof(saddr)) < 0)
-	{
+	if (connect(sock, (struct sockaddr *) &saddr, sizeof(saddr)) < 0) {
 	  #ifdef CIS_WINDOWS
 	  closesocket(sock);
 	  WSACleanup();
@@ -146,14 +143,12 @@ int CInsim::init (char *addr, word port, char *product, char *admin, struct IS_V
 	}
 
 	// If the user asked for NLP or MCI packets and defined an udpport
-	if (udpport > 0)
-	{
+	if (udpport > 0) {
 		// Create the UDP socket - this defines the type of socket
 		sockudp = socket(AF_INET, SOCK_DGRAM, 0);
 
 		// Could we get the socket handle? If not the OS might be too busy or have run out of available socket descriptors
-		if (sockudp == INVALID_SOCKET)
-		{
+		if (sockudp == INVALID_SOCKET) {
 			#ifdef CIS_WINDOWS
 			closesocket(sock);
 			closesocket(sockudp);
@@ -171,8 +166,8 @@ int CInsim::init (char *addr, word port, char *product, char *admin, struct IS_V
 		memset(&my_addr, 0, sizeof(my_addr));
 
 		// Bind the UDP socket to my specified udpport and address
-		my_addr.sin_family = AF_INET;         // host unsigned char order
-		my_addr.sin_port = htons(udpport);     // short, network unsigned char order
+		my_addr.sin_family = AF_INET;		 // host unsigned char order
+		my_addr.sin_port = htons(udpport);	 // short, network unsigned char order
 		my_addr.sin_addr.s_addr = INADDR_ANY;
 		memset(my_addr.sin_zero, '\0', sizeof my_addr.sin_zero);
 
@@ -194,8 +189,7 @@ int CInsim::init (char *addr, word port, char *product, char *admin, struct IS_V
 		udp_saddr.sin_port = htons(port);
 
 		// Connect the UDP using the same address as in the TCP socket
-		if (connect(sockudp, (struct sockaddr *) &udp_saddr, sizeof(udp_saddr)) < 0)
-		{
+		if (connect(sockudp, (struct sockaddr *) &udp_saddr, sizeof(udp_saddr)) < 0) {
 			#ifdef CIS_WINDOWS
 			closesocket(sock);
 			closesocket(sockudp);
@@ -217,7 +211,7 @@ int CInsim::init (char *addr, word port, char *product, char *admin, struct IS_V
 	isi_p.Size = sizeof(struct IS_ISI);
 	isi_p.Type = ISP_ISI;
 
-	if (pack_ver != NULL)             // We request an ISP_VER if the caller asks for it
+	if (pack_ver != NULL)			 // We request an ISP_VER if the caller asks for it
 		isi_p.ReqI = 1;
 
 	isi_p.Prefix = prefix;
@@ -228,16 +222,14 @@ int CInsim::init (char *addr, word port, char *product, char *admin, struct IS_V
 	memcpy(isi_p.Admin, admin, 16);
 
 	// Send the initialization packet
-	if(send_packet(&isi_p) < 0)
-	{
-		if (using_udp)
-		{
+	if(send_packet(&isi_p) < 0) {
+		if (using_udp) {
 			#ifdef CIS_WINDOWS
 			closesocket(sockudp);
 			#elif defined CIS_LINUX
 			close(sockudp);
 			#endif
-		}
+	}
 
 		#ifdef CIS_WINDOWS
 		closesocket(sock);
@@ -259,13 +251,9 @@ int CInsim::init (char *addr, word port, char *product, char *admin, struct IS_V
 	// If an IS_VER packet was requested
 	if (pack_ver != NULL)
 	{
-		if (next_packet() < 0)
-		{
-			// Get next packet, supposed to be an IS_VER
-			if (isclose() < 0)
-			{
-				if (using_udp)
-				{
+		if (next_packet() < 0) {			 // Get next packet, supposed to be an IS_VER
+			if (isclose() < 0) {
+				if (using_udp) {
 					#ifdef CIS_WINDOWS
 					closesocket(sockudp);
 					#elif defined CIS_LINUX
@@ -284,16 +272,14 @@ int CInsim::init (char *addr, word port, char *product, char *admin, struct IS_V
 			return -1;
 		}
 
-		switch (peek_packet())              // Check if the packet returned was an IS_VER
+		switch (peek_packet())			  // Check if the packet returned was an IS_VER
 		{
-			case ISP_VER:                     // It was, get it!
+			case ISP_VER:					 // It was, get it!
 				memcpy(pack_ver, (struct IS_VER*)get_packet(), sizeof(struct IS_VER));
 				break;
-			default:                          // It wasn't, something went wrong. Quit
-				if (isclose() < 0)
-				{
-					if (using_udp)
-					{
+			default:						  // It wasn't, something went wrong. Quit
+				if (isclose() < 0) {
+					if (using_udp) {
 						#ifdef CIS_WINDOWS
 						closesocket(sockudp);
 						#elif defined CIS_LINUX
@@ -328,8 +314,7 @@ int CInsim::isclose()
 	if (send_packet(&cl_packet) < 0)
 		return -1;
 
-	if (using_udp)
-	{
+	if (using_udp) {
 		#ifdef CIS_WINDOWS
 		closesocket(sockudp);
 		#elif defined CIS_LINUX
@@ -355,14 +340,12 @@ int CInsim::next_packet()
 	unsigned char oldp_size, p_size;
 	bool alive = true;
 
-	while (alive)                                               // Keep the connection alive!
+	while (alive)											   // Keep the connection alive!
 	{
 		alive = false;
 		oldp_size = (unsigned char)*lbuf.buffer;
 
-		if ((lbuf.bytes > 0) && (lbuf.bytes >= oldp_size))
-		{
-			// There's an old packet in the local buffer, skip it
+		if ((lbuf.bytes > 0) && (lbuf.bytes >= oldp_size)) {		// There's an old packet in the local buffer, skip it
 			// Copy the leftovers from local buffer to global buffer
 			memcpy(gbuf.buffer, lbuf.buffer+oldp_size, lbuf.bytes-oldp_size);
 			gbuf.bytes = lbuf.bytes - oldp_size;
@@ -375,7 +358,7 @@ int CInsim::next_packet()
 
 		p_size = (unsigned char)*lbuf.buffer;
 
-		while ((lbuf.bytes < p_size) || (lbuf.bytes < 1))       // Read until we have a full packet
+		while ((lbuf.bytes < p_size) || (lbuf.bytes < 1))	   // Read until we have a full packet
 		{
 			// Clear them
 			FD_ZERO(&readfd);
@@ -391,25 +374,24 @@ int CInsim::next_packet()
 			int rc = pselect(sock + 1, &readfd, NULL, &exceptfd, &select_timeout, NULL);
 			#endif
 
-			if (rc == 0)                    // Timeout
+			if (rc == 0)					// Timeout
 				continue;
 
-			if (rc < 0)                     // An error occured
+			if (rc < 0)					 // An error occured
 				return -1;
 
-			if (FD_ISSET(sock, &exceptfd))    // An exception occured - we want to quit
+			if (FD_ISSET(sock, &exceptfd))	// An exception occured - we want to quit
 				return -1;
 			else
-			{
-				// We got data!
+			{  // We got data!
 				// Recieve any waiting bytes
 				int retval = recv(sock, lbuf.buffer + lbuf.bytes, PACKET_BUFFER_SIZE - lbuf.bytes, 0);
 
 				// Deal with the results
-				if (retval == 0)                // Connection has been closed at the other end
+				if (retval == 0)				// Connection has been closed at the other end
 					return -2;
 
-				if (retval < 0)                 // An error ocurred
+				if (retval < 0)				 // An error ocurred
 					return -1;
 
 				p_size = *lbuf.buffer;
@@ -419,8 +401,7 @@ int CInsim::next_packet()
 
 		memcpy(packet, lbuf.buffer, p_size);
 
-		if ((peek_packet() == ISP_TINY) && (*(packet+3) == TINY_NONE))
-		{
+		if ((peek_packet() == ISP_TINY) && (*(packet+3) == TINY_NONE)) {
 			alive = true;
 
 			struct IS_TINY keepalive;
@@ -433,6 +414,8 @@ int CInsim::next_packet()
 			if (send_packet(&keepalive) < 0)
 				return -1;
 		}
+
+		ExecuteCallbacks(peek_packet());
 	}
 
 	return 0;
@@ -484,13 +467,13 @@ int CInsim::udp_next_packet()
 		int rc = pselect(sockudp + 1, &udp_readfd, NULL, &udp_exceptfd, &select_timeout, NULL);
 		#endif
 
-		if (rc == 0)                    // Timeout
+		if (rc == 0)					// Timeout
 			continue;
 
-		if (rc < 0)                     // An error occured
+		if (rc < 0)					 // An error occured
 			return -1;
 
-		if (FD_ISSET(sockudp, &udp_exceptfd))    // An exception occured - we want to quit
+		if (FD_ISSET(sockudp, &udp_exceptfd))	// An exception occured - we want to quit
 			return -1;
 		else  // We got data!
 		{
@@ -498,7 +481,7 @@ int CInsim::udp_next_packet()
 			int retval = recv(sockudp, udp_lbuf.buffer + udp_lbuf.bytes, PACKET_BUFFER_SIZE - udp_lbuf.bytes, 0);
 
 			// Deal with the results
-			if (retval < 0)                 // An error ocurred
+			if (retval < 0)				 // An error ocurred
 				return -1;
 
 			udp_lbuf.bytes += retval;
@@ -768,6 +751,52 @@ CInsim::SendSmall(byte SubT, unsigned UVal, byte ReqI)
 	delete packet;
 }
 
+/* Bind Manager */
+bool
+CInsim::Bind(byte PType, void (*callback)(CInsim* insim, void* packet) )
+{
+	binds[PType].push_back(callback);
+
+	return true;
+}
+
+
+bool
+CInsim::Unbind(byte PType, void* callback)
+{
+	if(binds.find(PType) == binds.end())
+		return false;
+
+	for(std::vector<void(*)(CInsim* insim, void* packet)>::iterator it = binds[PType].begin(); it != binds[PType].end(); ++it)
+	{
+		if(*it == callback)
+		{
+			binds[PType].erase(it);
+
+			if( binds[PType].empty() )
+				binds.erase(PType);
+
+			return true;
+		}
+	}
+
+	return false;
+}
+
+bool
+CInsim::ExecuteCallbacks(byte PType)
+{
+	if(binds.find(PType) == binds.end())
+		return false;
+
+	for(unsigned int i = 0; i < binds[PType].size(); ++i)
+	{
+	   binds[PType][i](this, this->get_packet());
+	}
+
+	return true;
+}
+
 /**
 * Other functions!!!
 */
@@ -776,9 +805,9 @@ CInsim::SendSmall(byte SubT, unsigned UVal, byte ReqI)
 /**
 * Converts miliseconds to a C string
 * 14 characters needed in str to not run into buffer overflow ("-hh:mm:ss.xxx\0")
-* @param    milisecs    Miliseconds to convert
-* @param    str         String to be filled with the result in format "-hh:mm:ss.xxx"
-* @param    thousands   Result shows: 0 = result hundreths of second; other = thousandths of second
+* @param	milisecs	Miliseconds to convert
+* @param	str		 String to be filled with the result in format "-hh:mm:ss.xxx"
+* @param	thousands   Result shows: 0 = result hundreths of second; other = thousandths of second
 */
 char* ms2str (long milisecs, char *str, int thousands)
 {
@@ -835,8 +864,7 @@ char* ms2str (long milisecs, char *str, int thousands)
 
 		if (minutes > 9)
 			sprintf(sminutes,"%d",minutes);
-		else
-		{
+		else{
 			strcpy(sminutes,"0");
 			sprintf(sminutes+1,"%d",minutes);
 		}
@@ -844,8 +872,7 @@ char* ms2str (long milisecs, char *str, int thousands)
 
 		if (seconds > 9)
 			sprintf(sseconds,"%d",seconds);
-		else
-		{
+		else{
 			strcpy(sseconds,"0");
 			sprintf(sseconds+1,"%d",seconds);
 		}
@@ -859,8 +886,7 @@ char* ms2str (long milisecs, char *str, int thousands)
 				strcpy(shundthou,"0");
 				sprintf(shundthou+1,"%d",hundthou);
 			}
-			else
-			{
+			else{
 				strcpy(shundthou,"00");
 				sprintf(shundthou+2,"%d",hundthou);
 			}
@@ -869,8 +895,7 @@ char* ms2str (long milisecs, char *str, int thousands)
 		{
 			if (hundthou > 9)
 				sprintf(shundthou,"%d",hundthou);
-			else
-			{
+			else{
 				strcpy(shundthou,"0");
 				sprintf(shundthou+1,"%d",hundthou);
 			}
@@ -885,8 +910,7 @@ char* ms2str (long milisecs, char *str, int thousands)
 
 		if (seconds > 9)
 			sprintf(sseconds,"%d",seconds);
-		else
-		{
+		else{
 			strcpy(sseconds,"0");
 			sprintf(sseconds+1,"%d",seconds);
 		}
@@ -896,13 +920,11 @@ char* ms2str (long milisecs, char *str, int thousands)
 		{
 			if (hundthou > 99)
 				sprintf(shundthou,"%d",hundthou);
-			else if (hundthou > 9)
-			{
+			else if (hundthou > 9){
 				strcpy(shundthou,"0");
 				sprintf(shundthou+1,"%d",hundthou);
 			}
-			else
-			{
+			else{
 				strcpy(shundthou,"00");
 				sprintf(shundthou+2,"%d",hundthou);
 			}
@@ -911,8 +933,7 @@ char* ms2str (long milisecs, char *str, int thousands)
 		{
 			if (hundthou > 9)
 				sprintf(shundthou,"%d",hundthou);
-			else
-			{
+			else{
 				strcpy(shundthou,"0");
 				sprintf(shundthou+1,"%d",hundthou);
 			}
@@ -928,13 +949,11 @@ char* ms2str (long milisecs, char *str, int thousands)
 		{
 			if (hundthou > 99)
 				sprintf(shundthou,"%d",hundthou);
-			else if (hundthou > 9)
-			{
+			else if (hundthou > 9){
 				strcpy(shundthou,"0");
 				sprintf(shundthou+1,"%d",hundthou);
 			}
-			else
-			{
+			else{
 				strcpy(shundthou,"00");
 				sprintf(shundthou+2,"%d",hundthou);
 			}
@@ -943,8 +962,7 @@ char* ms2str (long milisecs, char *str, int thousands)
 		{
 			if (hundthou > 9)
 				sprintf(shundthou,"%d",hundthou);
-			else
-			{
+			else{
 				strcpy(shundthou,"0");
 				sprintf(shundthou+1,"%d",hundthou);
 			}
@@ -959,13 +977,11 @@ char* ms2str (long milisecs, char *str, int thousands)
 		{
 			if (hundthou > 99)
 				sprintf(shundthou,"%d",hundthou);
-			else if (hundthou > 9)
-			{
+			else if (hundthou > 9){
 				strcpy(shundthou,"0");
 				sprintf(shundthou+1,"%d",hundthou);
 			}
-			else
-			{
+			else{
 				strcpy(shundthou,"00");
 				sprintf(shundthou+2,"%d",hundthou);
 			}
@@ -974,8 +990,7 @@ char* ms2str (long milisecs, char *str, int thousands)
 		{
 			if (hundthou > 9)
 				sprintf(shundthou,"%d",hundthou);
-			else
-			{
+			else{
 				strcpy(shundthou,"0");
 				sprintf(shundthou+1,"%d",hundthou);
 			}
