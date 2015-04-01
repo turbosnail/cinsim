@@ -2,7 +2,7 @@
 #define _ISPACKETS_H_
 /////////////////////
 
-// InSim for Live for Speed : 0.6C
+// InSim for Live for Speed : 0.6H
 
 // InSim allows communication between up to 8 external programs and LFS.
 
@@ -13,22 +13,28 @@
 // NOTE : This text file was written with a TAB size equal to 4 spaces.
 
 
-// INSIM VERSION NUMBER (updated for version 0.6B)
+// INSIM VERSION NUMBER (updated for version 0.6H)
 // ====================
 
-const int INSIM_VERSION = 5;
+const int INSIM_VERSION = 6;
 
 
 // CHANGES
 // =======
 
-// Version 0.5Z (no change to INSIM_VERSION)
+// Version 0.6H (INSIM_VERSION increased to 6)
+// ------------
+// IS_REO and IS_NLP increased in size to allow 40 drivers
+// ObjectInfo Zchar is now Zbyte - see layout file description
+// ISP_NCI packet added to give host more info about new guest
 
-// NLP / MCI packets are now output at regular intervals
-// CCI_LAG bit added to the CompCar structure
+// Version 0.6C
+// ------------
+// Small change to the in-game usage of IS_REO - only valid after SMALL_VTA
+// Some more values (CPW / OOS / JOOS / HACK) added to the leave reasons
 
 // Version 0.6B (INSIM_VERSION increased to 5)
-
+// ------------
 // Lap timing info added to IS_RST (Timing byte)
 // NLP / MCI minimum time interval reduced to 40 ms (was 50 ms)
 // IS_VTC now cancels game votes even if the majority has not been reached
@@ -49,10 +55,10 @@ const int INSIM_VERSION = 5;
 // FIX : OutGaugePack ID was always zero regardless of ID in cfg.txt
 // FIX : InSim camera with vertical pitch would cause LFS to crash
 
-// Version 0.6C
-
-// Small change to the in-game usage of IS_REO - only valid after SMALL_VTA
-// Some more values (CPW / OOS / JOOS / HACK) added to the leave reasons
+// Version 0.5Z (no change to INSIM_VERSION)
+// ------------
+// NLP / MCI packets are now output at regular intervals
+// CCI_LAG bit added to the CompCar structure
 
 
 // TYPES : (all multi-byte types are PC style - lowest byte first)
@@ -219,6 +225,8 @@ enum // the second byte of any packet is one of these
 	ISP_PLC,		// 53 - instruction		: player cars
 	ISP_AXM,		// 54 - both ways		: autocross multiple objects
 	ISP_ACR,		// 55 - info			: admin command report
+	ISP_HCP,		// 56 - instruction		: car handicaps
+	ISP_NCI,		// 57 - info			: new connection - extra info for host
 };
 
 enum // the fourth byte of an IS_TINY packet is one of these
@@ -236,7 +244,7 @@ enum // the fourth byte of an IS_TINY packet is one of these
 	TINY_ISM,		// 10 - info request	: get multiplayer info (i.e. ISP_ISM)
 	TINY_REN,		// 11 - info			: race end (return to race setup screen)
 	TINY_CLR,		// 12 - info			: all players cleared from race
-	TINY_NCN,		// 13 - info request	: get all connections
+	TINY_NCN,		// 13 - info request	: get NCN for all connections
 	TINY_NPL,		// 14 - info request	: get all players
 	TINY_RES,		// 15 - info request	: get all results
 	TINY_NLP,		// 16 - info request	: send an IS_NLP
@@ -246,6 +254,7 @@ enum // the fourth byte of an IS_TINY packet is one of these
 	TINY_AXI,		// 20 - info request	: send an IS_AXI - AutoX Info
 	TINY_AXC,		// 21 - info			: autocross cleared
 	TINY_RIP,		// 22 - info request	: send an IS_RIP - Replay Information Packet
+	TINY_NCI,		// 23 - info request	: get NCI for all guests (on host only)
 };
 
 enum // the fourth byte of an IS_SMALL packet is one of these
@@ -479,7 +488,7 @@ struct IS_MOD // MODe : send to LFS to change screen mode
 // MESSAGES OUT (FROM LFS)
 // ------------
 
-struct IS_MSO // MSg Out - system messages and user messages 
+struct IS_MSO // MSg Out - system messages and user messages
 {
 	byte	Size;		// 136
 	byte	Type;		// ISP_MSO
@@ -488,7 +497,7 @@ struct IS_MSO // MSg Out - system messages and user messages
 
 	byte	UCID;		// connection's unique id (0 = host)
 	byte	PLID;		// player's unique id (if zero, use UCID)
-	byte	UserType;	// set if typed by a user (see User Values below) 
+	byte	UserType;	// set if typed by a user (see User Values below)
 	byte	TextStart;	// first character of the actual text (after player name)
 
 	char	Msg[128];
@@ -743,6 +752,30 @@ struct IS_PLC // PLayer Cars
 // FORMULA BMW FB02	- 0x80000
 
 
+// HANDICAPS
+// =========
+
+// You can send a packet to add mass and restrict the intake on each car model
+// The same restriction applies to all drivers using a particular car model
+// This can be useful for creating multi class hosts
+
+struct CarHCP // Car handicaps in 2 bytes - there is an array of these in the HCP (below)
+{
+	byte	H_Mass;		// 0 to 200 - added mass (kg)
+	byte	H_TRes;		// 0 to  50 - intake restriction
+};
+
+struct IS_HCP // HandiCaPs
+{
+	byte	Size;		// 68
+	byte	Type;		// ISP_HCP
+	byte	ReqI;		// 0
+	byte	Zero;
+
+	CarHCP	Info[32];	// H_Mass and H_TRes for each car : XF GTI = 0 / XR GT = 1 etc
+};
+
+
 // RACE TRACKING
 // =============
 
@@ -828,6 +861,22 @@ struct IS_NCN // New ConN
 	byte	Total;		// number of connections including host
 	byte	Flags;		// bit 2 : remote
 	byte	Sp3;
+};
+
+struct IS_NCI // New Conn Info - sent on host only if an admin password has been set
+{
+	byte	Size;		// 16
+	byte	Type;		// ISP_NCI
+	byte	ReqI;		// 0 unless this is a reply to a TINY_NCI request
+	byte	UCID;		// new connection's unique id (0 = host)
+
+	byte	Language;	// see below : Languages
+	byte	Sp1;
+	byte	Sp2;
+	byte	Sp3;
+
+	unsigned	UserID;		// LFS UserID
+	unsigned	IPAddress;
 };
 
 struct IS_CNL // ConN Leave
@@ -1131,12 +1180,12 @@ struct IS_RES // RESult (qualify or confirmed finish)
 
 struct IS_REO // REOrder (when race restarts after qualifying)
 {
-	byte	Size;		// 36
+	byte	Size;		// 44
 	byte	Type;		// ISP_REO
 	byte	ReqI;		// 0 unless this is a reply to an TINY_REO request
 	byte	NumP;		// number of players in race
 
-	byte	PLID[32];	// all PLIDs in new order
+	byte	PLID[40];	// all PLIDs in new order
 };
 
 // To request an IS_REO packet at any time, send this IS_TINY :
@@ -1195,6 +1244,50 @@ enum
 
 const int VIEW_ANOTHER = 255; // viewing another car
 
+// Languages
+
+enum
+{
+	LFS_ENGLISH,				// 0
+	LFS_DEUTSCH,				// 1
+	LFS_PORTUGUESE,				// 2
+	LFS_FRENCH,					// 3
+	LFS_SUOMI,					// 4
+	LFS_NORSK,					// 5
+	LFS_NEDERLANDS,				// 6
+	LFS_CATALAN,				// 7
+	LFS_TURKISH,				// 8
+	LFS_CASTELLANO,				// 9
+	LFS_ITALIANO,				// 10
+	LFS_DANSK,					// 11
+	LFS_CZECH,					// 12
+	LFS_RUSSIAN,				// 13
+	LFS_ESTONIAN,				// 14
+	LFS_SERBIAN,				// 15
+	LFS_GREEK,					// 16
+	LFS_POLSKI,					// 17
+	LFS_CROATIAN,				// 18
+	LFS_HUNGARIAN,				// 19
+	LFS_BRAZILIAN,				// 20
+	LFS_SWEDISH,				// 21
+	LFS_SLOVAK,					// 22
+	LFS_GALEGO,					// 23
+	LFS_SLOVENSKI,				// 24
+	LFS_BELARUSSIAN,			// 25
+	LFS_LATVIAN,				// 26
+	LFS_LITHUANIAN,				// 27
+	LFS_TRADITIONAL_CHINESE,	// 28
+	LFS_SIMPLIFIED_CHINESE,		// 29
+	LFS_JAPANESE,				// 30
+	LFS_KOREAN,					// 31
+	LFS_BULGARIAN,				// 32
+	LFS_LATINO,					// 33
+	LFS_UKRAINIAN,				// 34
+	LFS_INDONESIAN,				// 35
+	LFS_ROMANIAN,				// 36
+	LFS_NUM_LANG				// 37
+};
+
 // Leave reasons
 
 enum
@@ -1216,7 +1309,7 @@ enum
 
 enum
 {
-	PENALTY_NONE,		// 0		
+	PENALTY_NONE,		// 0
 	PENALTY_DT,			// 1
 	PENALTY_DT_VALID,	// 2
 	PENALTY_SG,			// 3
@@ -1396,7 +1489,7 @@ struct IS_NLP // Node and Lap Packet - variable size
 	byte	ReqI;		// 0 unless this is a reply to an TINY_NLP request
 	byte	NumP;		// number of players in race
 
-	NodeLap	Info[32];	// node and lap of each player, 1 to 32 of these (NumP)
+	NodeLap	Info[40];	// node and lap of each player, 1 to 40 of these (NumP)
 };
 
 // If ISF_MCI flag is set, a set of IS_MCI packets is sent...
@@ -1459,7 +1552,7 @@ struct CarContact // 16 bytes : one car in a contact - two of these in the IS_CO
 	byte	Info;		// like Info byte in CompCar (CCI_BLUE / CCI_YELLOW / CCI_LAG)
 	byte	Sp2;		// spare
 	char	Steer;		// front wheel steer in degrees (right positive)
-	
+
 	byte	ThrBrk;		// high 4 bits : throttle    / low 4 bits : brake (0 to 15)
 	byte	CluHan;		// high 4 bits : clutch      / low 4 bits : handbrake (0 to 15)
 	byte	GearSp;		// high 4 bits : gear (15=R) / low 4 bits : spare
@@ -1559,7 +1652,7 @@ struct ObjectInfo // Info about a single object - explained in the layout file f
 {
 	short	X;
 	short	Y;
-	char	Zchar;
+	byte	Zbyte;
 	byte	Flags;
 	byte	Index;
 	byte	Heading;
@@ -1591,9 +1684,12 @@ enum
 	PMO_NUM
 };
 
-// Info about the PMOFlags byte (only bit 0 is currently used) :
+// Info about the PMOFlags byte :
 
-// If PMOFlags bit 0 is set in a PMO_LOADING_FILE packet, LFS has reached the end of
+#define PMO_FILE_END			1
+#define PMO_SUPPRESS_WARNINGS	2
+
+// If PMO_FILE_END is set in a PMO_LOADING_FILE packet, LFS has reached the end of
 // a layout file which it is loading.  The added objects will then be optimised.
 
 // Optimised in this case means that static vertex buffers will be created for all
@@ -1601,13 +1697,13 @@ enum
 // there are many objects loaded, optimisation causes a significant glitch which can
 // be long enough to cause a driver who is cornering to lose control and crash.
 
-// PMOFlags bit 0 can also be set in an IS_AXM with PMOAction of PMO_ADD_OBJECTS.
-// This causes all objects to be optimised.  It is important not to set bit 0 in
-// every packet you send to add objects or you will cause severe glitches on the
+// PMO_FILE_END can also be set in an IS_AXM with PMOAction of PMO_ADD_OBJECTS.
+// This causes all objects to be optimised.  It is important not to set PMO_FILE_END
+// in every packet you send to add objects or you will cause severe glitches on the
 // clients computers.  It is ok to have some objects on the track which are not
 // optimised.  So if you have a few objects that are being removed and added
 // occasionally, the best advice is not to request optimisation at all.  Only
-// request optimisation (by setting bit 0) if you have added so many objects
+// request optimisation (by setting PMO_FILE_END) if you have added so many objects
 // that it is needed to improve the frame rate.
 
 // NOTE 1) LFS makes sure that all objects are optimised when the race restarts.
@@ -1703,8 +1799,8 @@ struct IS_CPP // Cam Pos Pack - Full camera packet (in car OR SHIFT+U mode)
 	Vec		Pos;		// Position vector
 
 	word	H;			// heading - 0 points along Y axis
-	word	P;			// pitch   - 0 means looking at horizon
-	word	R;			// roll    - 0 means no roll
+	word	P;			// pitch
+	word	R;			// roll
 
 	byte	ViewPLID;	// Unique ID of viewed player (0 = none)
 	byte	InGameCam;	// InGameCam (as reported in StatePack)
