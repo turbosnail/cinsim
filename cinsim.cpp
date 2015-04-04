@@ -751,6 +751,128 @@ CInsim::SendSmall(byte SubT, unsigned UVal, byte ReqI)
 	delete packet;
 }
 
+std::string
+CInsim::GetLanguageCode(byte LID)
+{
+    switch(LID)
+    {
+        case LFS_ENGLISH:
+            return "en";
+            break;
+        case LFS_DEUTSCH:
+            return "de";
+            break;
+        case LFS_PORTUGUESE:
+            return "pt";
+            break;
+        case LFS_FRENCH:
+            return "fr";
+            break;
+        case LFS_SUOMI:
+            return "fi";
+            break;
+        case LFS_NORSK:
+            return "no";
+            break;
+        case LFS_NEDERLANDS:
+            return "nl";
+            break;
+        case LFS_CATALAN:
+            return "ca";
+            break;
+        case LFS_TURKISH:
+            return "tr";
+            break;
+        case LFS_CASTELLANO:
+            return "ca";
+            break;
+        case LFS_ITALIANO:
+            return "it";
+            break;
+        case LFS_DANSK:
+            return "da";
+            break;
+        case LFS_CZECH:
+            return "cz";
+            break;
+        case LFS_RUSSIAN:
+            return "ru";
+            break;
+        case LFS_ESTONIAN:
+            return "et";
+            break;
+        case LFS_SERBIAN:
+            return "sr";
+            break;
+        case LFS_GREEK:
+            return "el";
+            break;
+        case LFS_POLSKI:
+            return "pl";
+            break;
+        case LFS_CROATIAN:
+            return "hr";
+            break;
+        case LFS_HUNGARIAN:
+            return "hu";
+            break;
+        case LFS_BRAZILIAN:
+            return "br";
+            break;
+        case LFS_SWEDISH:
+            return "sv";
+            break;
+        case LFS_SLOVAK:
+            return "sl";
+            break;
+        case LFS_GALEGO:
+            return "ga";
+            break;
+        case LFS_SLOVENSKI:
+            return "sl";
+            break;
+        case LFS_BELARUSSIAN:
+            return "be";
+            break;
+        case LFS_LATVIAN:
+            return "lv";
+            break;
+        case LFS_LITHUANIAN:
+            return "lt";
+            break;
+        case LFS_TRADITIONAL_CHINESE:
+            return "zh-Hant";
+            break;
+        case LFS_SIMPLIFIED_CHINESE:
+            return "zh-Hans";
+            break;
+        case LFS_JAPANESE:
+            return "jp";
+            break;
+        case LFS_KOREAN:
+            return "ko";
+            break;
+        case LFS_BULGARIAN:
+            return "bg";
+            break;
+        case LFS_LATINO:
+            return "la";
+            break;
+        case LFS_UKRAINIAN:
+            return "ua";
+            break;
+        case LFS_INDONESIAN:
+            return "in";
+            break;
+        case LFS_ROMANIAN:
+            return "ro";
+            break;
+        default:
+            return "";
+            break;
+    }
+}
+
 /* Bind Manager */
 bool
 CInsim::Bind(byte PType, void (*callback)(CInsim* insim, void* packet) )

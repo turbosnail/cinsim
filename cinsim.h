@@ -172,6 +172,8 @@ class CInsim
 	void SendSmall(byte SubT, unsigned UVal);
 	void SendSmall(byte SubT, unsigned UVal, byte ReqI);
 
+	std::string GetLanguageCode(byte LID);
+
 	/* Bind Manager */
 	bool Bind(byte PType, void (*callback)(CInsim* insim, void* packet) );
 	bool Unbind(byte PType, void* callback);
