@@ -726,7 +726,7 @@ CInsim::SendButton(byte ReqI, byte UCID, byte ClickID, byte Left, byte Top, byte
     pack->T = Top;
     pack->W = Width;
     pack->H = Height;
-    sprintf(pack->Text, Text.c_str());
+    strcpy(pack->Text, Text.c_str());
     send_packet( pack );
     delete pack;
 }
