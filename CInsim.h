@@ -167,7 +167,6 @@ class CInsim
     void SendMTC(byte UCID, std::string Text);
     void SendBFN(byte UCID, byte ClickID);
     void SendBFN(byte UCID, byte ClickIdFrom, byte ClickIdTo);
-    void SendBFN(byte UCID, ...);
     void SendBFNAll(byte UCID);
     void SendPLC (byte UCID, unsigned PLC);
     void SendButton(byte ReqI,byte UCID, byte ClickID,byte Left, byte Top, byte Width, byte Height,byte BStyle, std::string Text);
