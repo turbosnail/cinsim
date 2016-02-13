@@ -107,7 +107,7 @@ CInsim::~CInsim ()
 * Initialize the socket and the Insim connection
 * If "struct IS_VER *pack_ver" is set it will contain an IS_VER packet after returning. It's an optional argument
 */
-int CInsim::init (char *addr, word port, char *product, char *admin, struct IS_VER *pack_ver, unsigned char prefix, word flags, word interval, word udpport)
+int CInsim::init (char *addr, word port, char *product, char *admin, struct IS_VER *pack_ver, unsigned char prefix, word flags, word interval, word udpport, byte version)
 {
     // Initialise WinSock
     // Only required on Windows
@@ -238,6 +238,7 @@ int CInsim::init (char *addr, word port, char *product, char *admin, struct IS_V
 	isi_p.Prefix = prefix;
 	isi_p.UDPPort = udpport;
 	isi_p.Flags = flags;
+	isi_p.InSimVer = version;
 	isi_p.Interval = interval;
 	memcpy(isi_p.IName, product, sizeof(isi_p.IName)-1);
 	memcpy(isi_p.Admin, admin, 16);
