@@ -896,6 +896,65 @@ CInsim::GetLanguageCode(byte LID)
     }
 }
 
+void
+CInsim::LightSet(byte Id,byte Color)
+{
+    IS_OCO* packet = new IS_OCO;
+    memset(packet,0,sizeof(IS_OCO));
+    packet->Size = sizeof(IS_OCO);
+    packet->Type = ISP_OCO;
+    packet->OCOAction = OCO_LIGHTS_SET;
+    packet->Index = 149;
+    packet->Identifier = Id;
+    packet->Data = Color;
+    send_packet(packet);
+    delete packet;
+}
+
+void
+CInsim::LightReset(byte Id)
+{
+    IS_OCO* packet = new IS_OCO;
+    memset(packet,0,sizeof(IS_OCO));
+    packet->Size = sizeof(IS_OCO);
+    packet->Type = ISP_OCO;
+    packet->OCOAction = OCO_LIGHTS_UNSET;
+    packet->Index = 149;
+    packet->Identifier = Id;
+    send_packet(packet);
+    delete packet;
+}
+
+void
+CInsim::LightResetAll()
+{
+    IS_OCO* packet = new IS_OCO;
+    memset(packet,0,sizeof(IS_OCO));
+    packet->Size = sizeof(IS_OCO);
+    packet->Type = ISP_OCO;
+    packet->OCOAction = OCO_LIGHTS_RESET;
+    packet->Index = 149;
+    send_packet(packet);
+    delete packet;
+}
+
+void
+CInsim::SendJRR(byte JRRAction, byte UCID, byte PLID)
+{
+    IS_JRR* packet = new IS_JRR;
+    memset(packet,0,sizeof(IS_JRR));
+    packet->Size = sizeof(IS_JRR);
+    packet->Type = ISP_JRR;
+
+    packet->JRRAction = JRRAction;
+    packet->UCID = UCID;
+    packet->PLID = PLID;
+
+    send_packet(packet);
+    delete packet;
+}
+
+
 /**
 * Other functions!!!
 */
@@ -1099,3 +1158,4 @@ char* ms2str (long milisecs, char *str, int thousands)
 
     return str;
 }
+

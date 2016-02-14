@@ -98,6 +98,14 @@ typedef struct
 
 #define USE_STATIC
 
+#define LIGHT_COLOR_RED 1
+#define LIGHT_COLOR_YELLOW 2
+#define LIGHT_COLOR_NONE 4
+#define LIGHT_COLOR_GREEN 8
+
+#define JRR_DENY 0
+#define JRR_ALLOW 1
+
 // Definition for our buffer datatype
 struct packBuffer
 {
@@ -175,6 +183,12 @@ class CInsim
     void SendTiny(byte SubT, byte ReqI);
     void SendSmall(byte SubT, unsigned UVal);
     void SendSmall(byte SubT, unsigned UVal, byte ReqI);
+
+    void LightSet(byte Id,byte Color);
+    void LightReset(byte Id);
+    void LightResetAll();
+
+    void SendJRR(byte JRRAction = 0, byte UCID = 0, byte PLID = 0);
 
     std::string GetLanguageCode(byte LID);
 };
