@@ -436,6 +436,8 @@ int CInsim::next_packet()
             if (send_packet(&keepalive) < 0)
                 return -1;
         }
+
+        ExecuteCallbacks(peek_packet());
     }
 
     return 0;
@@ -952,6 +954,52 @@ CInsim::SendJRR(byte JRRAction, byte UCID, byte PLID)
 
     send_packet(packet);
     delete packet;
+}
+
+/* Bind Manager */
+bool
+CInsim::Bind(byte PType, void (*callback)(CInsim* insim, void* packet) )
+{
+	binds[PType].push_back(callback);
+
+	return true;
+}
+
+
+bool
+CInsim::Unbind(byte PType, void* callback)
+{
+	if(binds.find(PType) == binds.end())
+		return false;
+
+	for(std::vector<void(*)(CInsim* insim, void* packet)>::iterator it = binds[PType].begin(); it != binds[PType].end(); ++it)
+	{
+		if(*it == callback)
+		{
+			binds[PType].erase(it);
+
+			if( binds[PType].empty() )
+				binds.erase(PType);
+
+			return true;
+		}
+	}
+
+	return false;
+}
+
+bool
+CInsim::ExecuteCallbacks(byte PType)
+{
+	if(binds.find(PType) == binds.end())
+		return false;
+
+	for(unsigned int i = 0; i < binds[PType].size(); ++i)
+	{
+		binds[PType][i](this, this->get_packet());
+	}
+
+	return true;
 }
 
 

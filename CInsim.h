@@ -73,15 +73,16 @@ typedef struct
 #include <string.h>
 #include <string>
 #include <cstdarg>
+#include <mutex>
+#include <map>
+#include <vector>
 
 // Includes for Windows (uses winsock2)
 #ifdef CIS_WINDOWS
 #include <winsock2.h>
-#include <mutex>
 
 // Includes for *NIX (no winsock2, these headers are needed instead)
 #elif defined CIS_LINUX
-#include <mutex>
 #include <limits.h>
 #include <netdb.h>
 #include <sys/types.h>
@@ -148,6 +149,9 @@ class CInsim
     fd_set udp_readfd, udp_exceptfd;        // (for NLP and MCI packets via UDP) File descriptor watches
     std::mutex *ismutex;                // Mutex var used for send_packet() method
 
+    std::map<byte,std::vector<void(*)(CInsim* insim, void* packet)>> binds;
+    bool ExecuteCallbacks(byte PType);
+
   public:
     #ifdef USE_STATIC
     static CInsim* getInstance();
@@ -191,8 +195,11 @@ class CInsim
     void SendJRR(byte JRRAction = 0, byte UCID = 0, byte PLID = 0);
 
     std::string GetLanguageCode(byte LID);
-};
 
+    /* Bind Manager */
+    bool Bind(byte PType, void (*callback)(CInsim* insim, void* packet) );
+    bool Unbind(byte PType, void* callback);
+};
 
 /**
 * Other functions!!!
