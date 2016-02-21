@@ -73,6 +73,7 @@ typedef struct
 #include <string.h>
 #include <string>
 #include <cstdarg>
+#include <stdexcept>
 
 // Includes for Windows (uses winsock2)
 #ifdef CIS_WINDOWS
@@ -102,9 +103,6 @@ typedef struct
 #define LIGHT_COLOR_YELLOW 2
 #define LIGHT_COLOR_NONE 4
 #define LIGHT_COLOR_GREEN 8
-
-#define JRR_DENY 0
-#define JRR_ALLOW 1
 
 // Definition for our buffer datatype
 struct packBuffer
@@ -188,7 +186,8 @@ class CInsim
     void LightReset(byte Id);
     void LightResetAll();
 
-    void SendJRR(byte JRRAction = 0, byte UCID = 0, byte PLID = 0);
+    void SendJRR(byte JRRAction = 0, byte UCID = 0);
+    void SendJRR(byte JRRAction, byte PLID, ObjectInfo obj);
 
     std::string GetLanguageCode(byte LID);
 };

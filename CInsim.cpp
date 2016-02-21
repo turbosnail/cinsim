@@ -939,8 +939,13 @@ CInsim::LightResetAll()
 }
 
 void
-CInsim::SendJRR(byte JRRAction, byte UCID, byte PLID)
+CInsim::SendJRR(byte JRRAction, byte UCID)
 {
+    if(JRRAction != JRR_REJECT && JRRAction != JRR_SPAWN)
+    {
+        throw new std::logic_error("SendJRR: JRRAction must be JRR_SPAWN or JRR_REJECT");
+    }
+
     IS_JRR* packet = new IS_JRR;
     memset(packet,0,sizeof(IS_JRR));
     packet->Size = sizeof(IS_JRR);
@@ -948,12 +953,32 @@ CInsim::SendJRR(byte JRRAction, byte UCID, byte PLID)
 
     packet->JRRAction = JRRAction;
     packet->UCID = UCID;
-    packet->PLID = PLID;
 
     send_packet(packet);
     delete packet;
 }
 
+void
+CInsim::SendJRR(byte JRRAction, byte PLID, ObjectInfo obj)
+{
+    if(JRRAction == JRR_REJECT || JRRAction == JRR_SPAWN)
+    {
+        throw new std::logic_error("SendJRR: JRRAction must be not JRR_SPAWN and JRR_REJECT");
+    }
+
+    IS_JRR* packet = new IS_JRR;
+    memset(packet,0,sizeof(IS_JRR));
+    packet->Size = sizeof(IS_JRR);
+    packet->Type = ISP_JRR;
+
+    packet->JRRAction = JRRAction;
+    packet->PLID = PLID;
+
+    packet->StartPos = obj;
+
+    send_packet(packet);
+    delete packet;
+}
 
 /**
 * Other functions!!!
