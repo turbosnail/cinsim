@@ -22,6 +22,11 @@ const int INSIM_VERSION = 7;
 // CHANGES
 // =======
 
+// Version 0.6N
+// -------------
+// Added ISS_DIALOG and ISS_TEXT_ENTRY to the ISS state flags
+// New packet SMALL_LCS - set local car switches (lights, horn, siren)
+
 // Version 0.6M (INSIM_VERSION increased to 7)
 // ------------
 // Backward compatibility system - send INSIM_VERSION in the IS_ISI
@@ -308,6 +313,7 @@ enum // the fourth byte of an IS_SMALL packet is one of these
 	SMALL_RTP,		//  6 - info			: race time packet (reply to GTH)
 	SMALL_NLI,		//  7 - instruction		: set node lap interval
 	SMALL_ALC,		//  8 - both ways		: set or get allowed cars (TINY_ALC)
+	SMALL_LCS,		//  7 - instruction		: set local car switches (lights, horn, siren)
 };
 
 enum // the fourth byte of an IS_TTC packet is one of these
@@ -343,7 +349,7 @@ struct IS_SMALL // General purpose 8 byte packet
 	byte	ReqI;		// 0 unless it is an info request or a reply to an info request
 	byte	SubT;		// subtype, from SMALL_ enumeration (e.g. SMALL_SSP)
 
-	unsigned UVal;	// value (e.g. for SMALL_SSP this would be the OutSim packet rate)
+	unsigned	UVal;	// value (e.g. for SMALL_SSP this would be the OutSim packet rate)
 };
 
 // IS_TTC
@@ -484,7 +490,7 @@ struct IS_STA // STAte
 #define ISS_REPLAY			2		// in SPR
 #define ISS_PAUSED			4		// paused
 #define ISS_SHIFTU			8		// SHIFT+U mode
-#define ISS_16				16		// UNUSED
+#define ISS_DIALOG			16		// in a dialog
 #define ISS_SHIFTU_FOLLOW	32		// FOLLOW view
 #define ISS_SHIFTU_NO_OPT	64		// SHIFT+U buttons hidden
 #define ISS_SHOW_2D			128		// showing 2d display
@@ -495,6 +501,7 @@ struct IS_STA // STAte
 #define ISS_SOUND_MUTE		4096	// sound is switched off
 #define ISS_VIEW_OVERRIDE	8192	// override user view
 #define ISS_VISIBLE			16384	// InSim buttons visible
+#define ISS_TEXT_ENTRY		32768	// in a text entry dialog
 
 // To request an IS_STA at any time, send this IS_TINY :
 
@@ -695,6 +702,38 @@ struct IS_SCH // Single CHaracter
 	byte	Spare2;
 	byte	Spare3;
 };
+
+
+// CAR SWITCHES
+// ============
+
+// To operate the local car's lights, horn or siren you can send this IS_SMALL :
+
+// ReqI : 0
+// SubT : SMALL_LCS		(Local Car Switches)
+// UVal : Switches		(see below)
+
+// Switches bits
+
+// Bits 0 to 7 are a set of flags specifying which values to set.  You can set as many
+// as you like at a time.  This is to allow you to set only the values you want to set
+// while leaving the others to be controlled by the user.
+
+#define LCS_SET_SIGNALS		1		// bit 0
+#define LCS_SET_FLASH		2		// bit 1
+#define LCS_SET_HEADLIGHTS	4		// bit 2
+#define LCS_SET_HORN		8		// bit 3
+#define LCS_SET_SIREN		0x10	// bit 4
+
+// Depending on the above values, InSim will read some of the following values and try
+// to set them as required, if a real player is found on the local computer.
+
+// bits 8-9   (Switches & 0x0300) - Signal    (0 off / 1 left / 2 right / 3 hazard)
+// bit  10    (Switches & 0x0400) - Flash
+// bit	11    (Switches & 0x0800) - Headlights
+
+// bits 16-18 (Switches & 0x070000) - Horn    (0 off / 1 to 5 horn type)
+// bits 20-21 (Switches & 0x300000) - Siren   (0 off / 1 fast / 2 slow)
 
 
 // MULTIPLAYER NOTIFICATION
