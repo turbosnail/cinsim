@@ -994,7 +994,7 @@ CInsim::ResetCar(byte PLID, int X, int Y, int Z, word Heading, bool repair)
 
     byte jrrAction = repair ? JRR_RESET : JRR_RESET_NO_REPAIR;
 
-    this->SendJRR(PLID, jrrAction, o);
+    this->SendJRR(jrrAction, PLID, o);
 }
 
 /**
