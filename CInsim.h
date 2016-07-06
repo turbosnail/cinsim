@@ -189,6 +189,19 @@ class CInsim
     void SendJRR(byte JRRAction = 0, byte UCID = 0);
     void SendJRR(byte JRRAction, byte PLID, ObjectInfo obj);
 
+    /** @brief Reset player by PLID to current respawn point
+     *
+     * @param byte PLayer ID
+     * @param int Raw MCI X position
+     * @param int Raw MCI Y position
+     * @param int Raw MCI Z position
+     * @param word Raw MCI Heading
+     * @param bool Reset or reset and repair
+     * @return void
+     *
+     */
+    void ResetCar(byte PLID, int X, int Y, int Z, word Heading, bool repair = true);
+
     std::string GetLanguageCode(byte LID);
 };
 

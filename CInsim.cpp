@@ -980,6 +980,23 @@ CInsim::SendJRR(byte JRRAction, byte PLID, ObjectInfo obj)
     delete packet;
 }
 
+void
+CInsim::ResetCar(byte PLID, int X, int Y, int Z, word Heading, bool repair)
+{
+    ObjectInfo o;
+    memset(&o, 0, sizeof(ObjectInfo));
+
+    o.X = X/4096;
+    o.Y = Y/4096;
+    o.Zbyte = Z/16384;
+    o.Heading = Heading > 0 ? ((Heading / 182 + 180) % 360 * 256 / 360) : 0;
+    o.Flags = (X != 0 || Y != 0 || Z != 0 || Heading != 0) ? 0x80 : 0;
+
+    byte jrrAction = repair ? JRR_RESET : JRR_RESET_NO_REPAIR;
+
+    this->SendJRR(PLID, jrrAction, o);
+}
+
 /**
 * Other functions!!!
 */
