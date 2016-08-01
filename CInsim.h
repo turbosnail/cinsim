@@ -170,7 +170,7 @@ class CInsim
 
     void SendMST(std::string Text);
     void SendMSX(std::string Text);
-    void SendMTC(byte UCID, std::string Text);
+    void SendMTC(byte UCID, std::string Text, byte Sound = SND_SILENT);
     void SendBFN(byte UCID, byte ClickID);
     void SendBFN(byte UCID, byte ClickIdFrom, byte ClickIdTo);
     void SendBFNAll(byte UCID);

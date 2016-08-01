@@ -602,13 +602,14 @@ int CInsim::send_packet(void* s_packet)
 }
 
 void
-CInsim::SendMTC (byte UCID, std::string Msg)
+CInsim::SendMTC (byte UCID, std::string Msg, byte Sound)
 {
     IS_MTC *pack = new IS_MTC;
     memset( pack, 0, sizeof( IS_MTC ) );
     pack->Size = sizeof( IS_MTC );
     pack->Type = ISP_MTC;
     pack->UCID = UCID;
+    pack->Sound = Sound;
     strcpy( pack->Text, Msg.substr(0,127).c_str());
     send_packet( pack );
     delete pack;
