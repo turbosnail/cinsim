@@ -13,17 +13,25 @@
 // NOTE : This text file was written with a TAB size equal to 4 spaces.
 
 
-// INSIM VERSION NUMBER (updated for version 0.6M)
+// INSIM VERSION NUMBER (updated for version 0.6T)
 // ====================
 
-const int INSIM_VERSION = 7;
+const int INSIM_VERSION = 8;
 
 
 // CHANGES
 // =======
 
+// Version 0.6T (INSIM_VERSION increased to 8)
+// ------------
+// New value PMO_POSITION for IS_AXM packet to report a blank position
+// New packet IS_CIM reports a connection's interface mode
+// New values TTC_SEL_START and TTC_SEL_STOP for IS_TTC
+// New value PMO_GET_Z for IS_AXM packet to report Z values
+// New values PMO_SELECTION_REAL, PMO_MOVE_MODIFY, PMO_AVOID_CHECK
+
 // Version 0.6N
-// -------------
+// ------------
 // Added ISS_DIALOG and ISS_TEXT_ENTRY to the ISS state flags
 // New packet SMALL_LCS - set local car switches (lights, horn, siren)
 
@@ -269,6 +277,7 @@ enum // the second byte of any packet is one of these
 	ISP_TTC,		// 61 - instruction		: multi purpose - target to connection
 	ISP_SLC,		// 62 - info			: connection selected a car
 	ISP_CSC,		// 63 - info			: car state changed
+	ISP_CIM,		// 64 - info			: connection's interface mode
 };
 
 enum // the fourth byte of an IS_TINY packet is one of these
@@ -313,13 +322,15 @@ enum // the fourth byte of an IS_SMALL packet is one of these
 	SMALL_RTP,		//  6 - info			: race time packet (reply to GTH)
 	SMALL_NLI,		//  7 - instruction		: set node lap interval
 	SMALL_ALC,		//  8 - both ways		: set or get allowed cars (TINY_ALC)
-	SMALL_LCS,		//  7 - instruction		: set local car switches (lights, horn, siren)
+	SMALL_LCS,		//  9 - instruction		: set local car switches (lights, horn, siren)
 };
 
 enum // the fourth byte of an IS_TTC packet is one of these
 {
 	TTC_NONE,		//  0					: not used
 	TTC_SEL,		//  1 - info request	: send IS_AXM for a layout editor selection
+	TTC_SEL_START,	//  2 - info request	: send IS_AXM every time the selection changes
+	TTC_SEL_STOP,	//  3 - instruction		: switch off IS_AXM requested by TTC_SEL_START
 };
 
 
@@ -1018,6 +1029,81 @@ struct IS_SLC // SeLected Car - sent when a connection selects a car (empty if n
 };
 
 // NOTE : If a new guest joins and does have a car selected then an IS_SLC will be sent
+
+struct IS_CIM // Conn Interface Mode
+{
+	byte	Size;		// 8
+	byte	Type;		// ISP_CIM
+	byte	ReqI;		// 0
+	byte	UCID;		// connection's unique id (0 = local)
+
+	byte	Mode;		// mode identifier (see below)
+	byte	SubMode;	// submode identifier (see below)
+	byte	SelType;	// selected object type (see below)
+	byte	Sp3;
+};
+
+// Mode identifiers
+
+enum
+{
+	CIM_NORMAL,				// 0 - not in a special mode
+	CIM_OPTIONS,			// 1
+	CIM_HOST_OPTIONS,		// 2
+	CIM_GARAGE,				// 3
+	CIM_CAR_SELECT,			// 4
+	CIM_TRACK_SELECT,		// 5
+	CIM_SHIFTU,				// 6 - free view mode
+	CIM_NUM
+};
+
+// Submode identifiers for CIM_NORMAL
+
+enum
+{
+	NRM_NORMAL,
+	NRM_WHEEL_TEMPS,		// F9
+	NRM_WHEEL_DAMAGE,		// F10
+	NRM_LIVE_SETTINGS,		// F11
+	NRM_PIT_INSTRUCTIONS,	// F12
+	NRM_NUM
+};
+
+// SubMode identifiers for CIM_GARAGE
+
+enum
+{
+	GRG_INFO,
+	GRG_COLOURS,
+	GRG_BRAKE_TC,
+	GRG_SUSP,
+	GRG_STEER,
+	GRG_DRIVE,
+	GRG_TYRES,
+	GRG_AERO,
+	GRG_PASS,
+	GRG_NUM
+};
+
+// SubMode identifiers for CIM_SHIFTU
+
+enum
+{
+	FVM_PLAIN,				// no buttons displayed
+	FVM_BUTTONS,			// buttons displayed (not editing)
+	FVM_EDIT,				// edit mode
+	FVM_NUM
+};
+
+// SelType is the selected object type or zero if unselected
+// It may be an AXO_x as in ObjectInfo or one of these :
+
+const int MARSH_IS_CP		= 252; // insim checkpoint
+const int MARSH_IS_AREA		= 253; // insim circle
+const int MARSH_MARSHALL	= 254; // restricted area
+const int MARSH_ROUTE		= 255; // route checker
+
+//
 
 struct IS_CNL // ConN Leave
 {
@@ -1877,7 +1963,7 @@ enum
 
 // Identifying an InSim checkpoint from the ObjectInfo :
 
-// Index is 252.  Checkpoint index (seen in the autocross editor) is stored in Flags bits 0 and 1
+// Index is 252.  Checkpoint index (seen in the layout editor) is stored in Flags bits 0 and 1
 
 // 00 = finish line
 // 01 = 1st checkpoint
@@ -1889,7 +1975,7 @@ enum
 
 // Identifying an InSim circle from the ObjectInfo :
 
-// Index is 253.  The circle index (seen in the autocross editor) is stored in the Heading byte.
+// Index is 253.  The circle index (seen in the layout editor) is stored in the Heading byte.
 
 struct IS_CSC // Car State Changed - reports a change in a car's state (currently start or stop)
 {
@@ -2007,13 +2093,19 @@ enum
 	PMO_TINY_AXM,		// 4 - a reply to a TINY_AXM request
 	PMO_TTC_SEL,		// 5 - a reply to a TTC_SEL request
 	PMO_SELECTION,		// 6 - set a connection's layout editor selection
+	PMO_POSITION,		// 7 - user pressed O without anything selected
+	PMO_GET_Z,			// 8 - request Z values / reply with Z values
 	PMO_NUM
 };
 
-// Info about the PMOFlags byte :
+// Info about the PMOFlags byte
 
 #define PMO_FILE_END			1
-#define PMO_SUPPRESS_WARNINGS	2
+#define PMO_MOVE_MODIFY			2
+#define PMO_SELECTION_REAL		4
+#define PMO_AVOID_CHECK			8
+
+// PMO_FILE_END
 
 // If PMO_FILE_END is set in a PMO_LOADING_FILE packet, LFS has reached the end of
 // a layout file which it is loading.  The added objects will then be optimised.
@@ -2042,6 +2134,29 @@ enum
 // the corresponding IS_AXM that will be output when the packet is processed.  Then
 // you can send the second packet and again wait for the IS_AXM and so on.
 
+// PMO_MOVE_MODIFY
+
+// When objects are moved or modified in the layout editor, two IS_AXM packets are
+// sent.  A PMO_DEL_OBJECTS followed by a PMO_ADD_OBJECTS.  In this case the flag
+// PMO_MOVE_MODIFY is set in the PMOFlags byte of both packets.
+
+// PMO_SELECTION_REAL
+
+// If you send an IS_AXM with PMOAction of PMO_SELECTION it is possible for it to be
+// either a selection of real objects (as if the user selected several objects while
+// holding the CTRL key) or a clipboard selection (as if the user pressed CTRL+C after
+// selecting objects).  Clipboard is the default selection mode.  A real selection can
+// be set by using the PMO_SELECTION_REAL bit in the PMOFlags byte.
+
+// PMO_AVOID_CHECK
+
+// If you send an IS_AXM with PMOAction of PMO_ADD_OBJECTS you may wish to set the
+// UCID to one of the guest connections (for example if that user's action caused the
+// objects to be added).  In this case some validity checks are done on the guest's
+// computer which may report "invalid position" or "intersecting object" and delete
+// the objects.  This can be avoided by setting the PMO_AVOID_CHECK bit.
+
+
 // To request IS_AXM packets for all layout objects and circles send this IS_TINY :
 
 // ReqI : non-zero		(returned in the reply)
@@ -2051,11 +2166,23 @@ enum
 // If there are no objects or circles, there will be one IS_AXM with zero NumO.
 // The final IS_AXM packet will have the PMO_FILE_END flag set.
 
+
 // To request an IS_AXM for a connection's layout editor selection send this IS_TTC :
 
 // ReqI : non-zero		(returned in the reply)
 // SubT : TTC_SEL		(request an IS_AXM for the current selection)
 // UCID : connection	(0 = local / non-zero = guest)
+
+// An IS_AXM with PMO_POSITION is sent with a single object in the packet if a user
+// presses O without any object type selected.  Information only - no object is added.
+// The only valid values in Info are X, Y, Zbyte and Heading.
+
+// PMO_GET_Z can be used to request the resulting Zbyte values for given X, Y, Zbyte
+// positions listed in the IS_AXM.  A similar reply (information only) will be sent
+// with adjusted Zbyte values.  Index and Heading are ignored and set to zero in the
+// reply.  Flags is set to 0x80 if Zbyte was successfully adjusted, zero if not.
+// Suggested input values for Zbyte are either 240 to get the highest point at X, Y
+// or you may use the approximate altitude (see layout file format).
 
 
 // CAR POSITION PACKETS (Initialising OutSim from InSim - See "OutSim" below)
