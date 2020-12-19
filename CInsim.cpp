@@ -32,8 +32,6 @@
  * *NIX compatibility and additional code and corrections provided by MadCatX.
  */
 
-//using namespace std;
-
 #include <CInsim.h>
 
 #ifdef CIS_LINUX
@@ -45,7 +43,7 @@
 #define IS_MTC_HDRSIZE 8
 #define IS_MTC_MAXTLEN 127
 
-#ifdef USE_STATIC
+#ifdef IS_USE_STATIC
 CInsim*
 CInsim::self = nullptr;
 
@@ -58,13 +56,22 @@ CInsim::getInstance()
     return self;
 }
 
+CInsim*
+CInsim::getInstance(const std::string hostname, const word port, const std::string name, const std::string password, byte prefix, word flags, word interval, word udpport, byte version)
+{
+    if(!self)
+        self = new CInsim(hostname, port, name, password, prefix, flags, interval, udpport, version);
+
+    return self;
+}
+
 void
 CInsim::removeInstance()
 {
     if(self)
         delete self;
 }
-#endif // USE_STATIC
+#endif // IS_USE_STATIC
 
 /**
 * Constructor: Initialize the buffers
@@ -92,6 +99,47 @@ CInsim::CInsim ()
     using_udp = 0;
 }
 
+CInsim::CInsim(const std::string hostname, const word port, const std::string name, const std::string password, byte prefix, word flags, word interval, word udpport, byte version)
+{
+    // Initialize the mutex var
+    ismutex = new std::mutex();
+
+    // Initialize global buffers
+    memset(gbuf.buffer, 0, PACKET_BUFFER_SIZE);
+    gbuf.bytes = 0;
+
+    // Initialize local buffers
+    memset(lbuf.buffer, 0, PACKET_BUFFER_SIZE);
+    memset(udp_lbuf.buffer, 0, PACKET_BUFFER_SIZE);
+    lbuf.bytes = 0;
+    udp_lbuf.bytes = 0;
+
+    // Initialize packet buffers
+    memset(packet, 0, PACKET_MAX_SIZE);
+    memset(udp_packet, 0, PACKET_MAX_SIZE);
+
+    // By default we're not using UDP
+    using_udp = 0;
+
+     this->hostname = hostname;
+     this->tcpPort = port;
+     this->udpPort = udpport;
+
+     if(name.length() > 16) {
+        throw new std::logic_error("InSim name must be less or equal than 16 chars");
+    }
+    this->product = name;
+
+    if(password.length() > 16) {
+        throw new std::logic_error("InSim password must be less or equal than 16 chars");
+    }
+    this->password = password;
+    this->prefix = prefix;
+    this->flags = flags;
+    this->interval = interval;
+    this->version = version;
+}
+
 
 /**
 * Destructor: Initialize the buffers
@@ -102,12 +150,78 @@ CInsim::~CInsim ()
     delete ismutex;
 }
 
+CInsim* CInsim::setHost(const std::string hostname)
+{
+    this->hostname = hostname;
+    return this;
+}
+
+CInsim* CInsim::setTCPPort(const word port)
+{
+    this->tcpPort = port;
+    return this;
+}
+
+CInsim* CInsim::setUDPPort(const word port)
+{
+    this->udpPort = port;
+    return this;
+}
+
+CInsim* CInsim::setProduct(const std::string name)
+{
+    if(name.length() > 16) {
+        throw new std::logic_error("InSim name must be less or equal than 16 chars");
+    }
+    this->product = name;
+    return this;
+}
+
+CInsim* CInsim::setPassword(const std::string password)
+{
+    if(password.length() > 16) {
+        throw new std::logic_error("InSim password must be less or equal than 16 chars");
+    }
+    this->password = password;
+    return this;
+}
+
+CInsim* CInsim::setPrefix(const byte prefix)
+{
+    this->prefix = prefix;
+    return this;
+}
+
+CInsim* CInsim::setFlags(const word flags)
+{
+    this->flags = flags;
+    return this;
+}
+
+CInsim* CInsim::setInterval(const word interval)
+{
+    this->interval = interval;
+    return this;
+}
+
+CInsim* CInsim::setVersion(const byte version)
+{
+    this->version = version;
+    return this;
+}
+
+
+byte CInsim::getHostVersion()
+{
+    return this->hostInSimVersion;
+}
+
 
 /**
 * Initialize the socket and the Insim connection
 * If "struct IS_VER *pack_ver" is set it will contain an IS_VER packet after returning. It's an optional argument
 */
-int CInsim::init (const char *addr, word port, const char *product, const char *admin, struct IS_VER *pack_ver, byte prefix, word flags, word interval, word udpport, byte version)
+int CInsim::init()
 {
     // Initialise WinSock
     // Only required on Windows
@@ -141,15 +255,15 @@ int CInsim::init (const char *addr, word port, const char *product, const char *
     saddr.sin_family = AF_INET;
 
     struct hostent *hp;
-    hp = gethostbyname(addr);
+    hp = gethostbyname(this->hostname.c_str());
 
     if (hp != NULL)
       saddr.sin_addr.s_addr = *((unsigned long*)hp->h_addr);
     else
-      saddr.sin_addr.s_addr = inet_addr(addr);
+      saddr.sin_addr.s_addr = inet_addr(this->hostname.c_str());
 
     // Set the port number in the socket structure - we convert it from host unsigned char order, to network
-    saddr.sin_port = htons(port);
+    saddr.sin_port = htons(this->tcpPort);
 
     // Now the socket address structure is full, lets try to connect
     if (connect(sock, (struct sockaddr *) &saddr, sizeof(saddr)) < 0) {
@@ -164,7 +278,7 @@ int CInsim::init (const char *addr, word port, const char *product, const char *
     }
 
 	// If the user asked for NLP or MCI packets and defined an udpport
-	if (udpport > 0) {
+	if (this->udpPort > 0) {
         // Create the UDP socket - this defines the type of socket
         sockudp = socket(AF_INET, SOCK_DGRAM, 0);
 
@@ -188,7 +302,7 @@ int CInsim::init (const char *addr, word port, const char *product, const char *
 
         // Bind the UDP socket to my specified udpport and address
         my_addr.sin_family = AF_INET;         // host unsigned char order
-        my_addr.sin_port = htons(udpport);     // short, network unsigned char order
+        my_addr.sin_port = htons(this->udpPort);     // short, network unsigned char order
         my_addr.sin_addr.s_addr = INADDR_ANY;
         memset(my_addr.sin_zero, '\0', sizeof my_addr.sin_zero);
 
@@ -198,16 +312,14 @@ int CInsim::init (const char *addr, word port, const char *product, const char *
         // Set the server address and the connect to it
         udp_saddr.sin_family = AF_INET;
 
-        struct hostent *udp_hp;
-        udp_hp = gethostbyname(addr);
 
-        if (udp_hp != NULL)
-            udp_saddr.sin_addr.s_addr = *((unsigned long*)udp_hp->h_addr);
+        if (hp != NULL)
+            udp_saddr.sin_addr.s_addr = *((unsigned long*)hp->h_addr);
         else
-            udp_saddr.sin_addr.s_addr = inet_addr(addr);
+            udp_saddr.sin_addr.s_addr = inet_addr(this->hostname.c_str());
 
         // Set the UDP port number in the UDP socket structure - we convert it from host unsigned char order, to network
-        udp_saddr.sin_port = htons(port);
+        udp_saddr.sin_port = htons(this->udpPort);
 
         // Connect the UDP using the same address as in the TCP socket
         if (connect(sockudp, (struct sockaddr *) &udp_saddr, sizeof(udp_saddr)) < 0) {
@@ -231,17 +343,16 @@ int CInsim::init (const char *addr, word port, const char *product, const char *
 	memset(&isi_p, 0, sizeof(struct IS_ISI));
 	isi_p.Size = sizeof(struct IS_ISI);
 	isi_p.Type = ISP_ISI;
-
-	if (pack_ver != NULL)             // We request an ISP_VER if the caller asks for it
+	if (this->sendPackVer) {
         isi_p.ReqI = 1;
-
-	isi_p.Prefix = prefix;
-	isi_p.UDPPort = udpport;
-	isi_p.Flags = flags;
-	isi_p.InSimVer = version;
-	isi_p.Interval = interval;
-	memcpy(isi_p.IName, product, sizeof(isi_p.IName)-1);
-	memcpy(isi_p.Admin, admin, 16);
+    }
+	isi_p.Prefix = this->prefix;
+	isi_p.UDPPort = this->udpPort;
+	isi_p.Flags = this->flags;
+	isi_p.InSimVer = this->version;
+	isi_p.Interval = this->interval;
+	memcpy(isi_p.IName, this->product.c_str(), sizeof(isi_p.IName)-1);
+	memcpy(isi_p.Admin, this->password.c_str(), 16);
 
     // Send the initialization packet
     if(send_packet(&isi_p) < 0) {
@@ -271,10 +382,10 @@ int CInsim::init (const char *addr, word port, const char *product, const char *
     #endif
 
     // If an IS_VER packet was requested
-    if (pack_ver != NULL)
+    if (this->sendPackVer)
     {
         if (next_packet() < 0) {             // Get next packet, supposed to be an IS_VER
-            if (isclose() < 0) {
+            if (disconnect() < 0) {
                 if (using_udp) {
                     #ifdef CIS_WINDOWS
                     closesocket(sockudp);
@@ -297,10 +408,15 @@ int CInsim::init (const char *addr, word port, const char *product, const char *
         switch (peek_packet())              // Check if the packet returned was an IS_VER
         {
             case ISP_VER:                     // It was, get it!
-                memcpy(pack_ver, (struct IS_VER*)get_packet(), sizeof(struct IS_VER));
+                IS_VER *packVer;
+                memcpy(packVer, (struct IS_VER*)get_packet(), sizeof(struct IS_VER));
+                this->hostProduct = packVer->Product;
+                this->hostVersion = packVer->Version;
+                this->hostInSimVersion = packVer->InSimVer;
+                delete packVer;
                 break;
             default:                          // It wasn't, something went wrong. Quit
-                if (isclose() < 0) {
+                if (disconnect() < 0) {
                     if (using_udp) {
                         #ifdef CIS_WINDOWS
                         closesocket(sockudp);
@@ -325,7 +441,7 @@ int CInsim::init (const char *addr, word port, const char *product, const char *
 /**
 * Close connection to InSim
 */
-int CInsim::isclose()
+int CInsim::disconnect()
 {
     struct IS_TINY cl_packet;
     cl_packet.Size = 4;

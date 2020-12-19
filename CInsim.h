@@ -45,12 +45,14 @@ typedef struct CompCar CompCar;
 typedef struct CarContact CarContact;
 typedef struct CarContOBJ CarContOBJ;
 typedef struct ObjectInfo ObjectInfo;
+
 typedef struct
 {
     int x;
     int y;
     int z;
 } Vec;
+
 typedef struct
 {
     float x;
@@ -97,7 +99,7 @@ typedef struct
 #define PACKET_MAX_SIZE 512
 #define IS_TIMEOUT 5
 
-#define USE_STATIC
+#define IS_USE_STATIC
 
 #define LIGHT_COLOR_RED 1
 #define LIGHT_COLOR_YELLOW 2
@@ -117,11 +119,29 @@ struct packBuffer
 class CInsim
 {
   private:
-    #ifdef USE_STATIC
-    CInsim();                               // Constructor
-    ~CInsim();                              // Destructor
+    std::string hostname;
+    word tcpPort;
+    word udpPort;
+    std::string product;
+    std::string password;
+    byte prefix;
+    word flags;
+    word interval;
+    byte version;
+
+    bool sendPackVer = true;
+    std::string hostVersion;
+    std::string hostProduct;
+    byte   hostInSimVersion;
+
+
+
+    #ifdef IS_USE_STATIC
+    CInsim();
+    CInsim(const std::string hostname, const word port, const std::string product, const std::string admin, byte prefix = 0, word flags = 0, word interval = 0, word udpport = 0, byte version = 8);
+    ~CInsim();
     static CInsim* self;
-    #endif // USE_STATIC
+    #endif // IS_USE_STATIC
 
     #ifdef CIS_WINDOWS
     SOCKET sock;                            // TCP Socket (most packets)
@@ -147,19 +167,33 @@ class CInsim
     std::mutex *ismutex;                // Mutex var used for send_packet() method
 
   public:
-    #ifdef USE_STATIC
+    #ifdef IS_USE_STATIC
     static CInsim* getInstance();
+    static CInsim* getInstance(const std::string hostname, const word port, const std::string product, const std::string admin, byte prefix = 0, word flags = 0, word interval = 0, word udpport = 0, byte version = 8);
     static void removeInstance();
     #else
-    CInsim();                               // Constructor
-    ~CInsim();                              // Destructor
-    #endif // USE_STATIC
+    CInsim();
+    CInsim(const std::string hostname, const word port, const std::string product, const std::string admin, byte prefix = 0, word flags = 0, word interval = 0, word udpport = 0, byte version = 8);
+    ~CInsim();
+    #endif // IS_USE_STATIC
 
-    //  "int init(...)" Establishes connection with the socket and insim.
+    CInsim* setHost(const std::string hostname);
+    CInsim* setTCPPort(const word port);
+    CInsim* setUDPPort(const word port);
+    CInsim* setProduct(const std::string name);
+    CInsim* setPassword(const std::string password);
+    CInsim* setPrefix(const byte prefix);
+    CInsim* setFlags(const word flags);
+    CInsim* setInterval(const word interval);
+    CInsim* setVersion(const byte version);
+
+    byte    getHostVersion();
+
+    //  "int connect(...)" Establishes connection with the socket and insim.
     //+ The last argument ch_ver is a pointer to a IS_VER struct. If it's used an IS_VER packet
     //+ will be returned. If ch_ver is not used in the call no IS_VER will be requested/returned.
-    int init (const char *addr, word port, const char *product, const char *admin, struct IS_VER *pack_ver = NULL, byte prefix = 0, word flags = 0, word interval = 0, word udpport = 0, byte version = 7);
-    int isclose();                      // Closes connection from insim and from the socket
+    int init();
+    int disconnect();                   // Closes connection from insim and from the socket
     int next_packet();                  // Gets next packet ready into "char packet[]"
     char peek_packet();                 // Returns the type of the current packet
     void* get_packet();                 // Returns a pointer to the current packet. Must be casted
