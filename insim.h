@@ -2571,6 +2571,7 @@ enum // the fourth byte of IS_BFN packets is one of these
 // SHIFT+B is the same but for local buttons and local instances
 
 // To send a button to LFS, send this variable sized packet
+const int TEXT_SIZE = 240;
 
 struct IS_BTN // BuTtoN - button header - followed by 0 to 240 characters
 {
