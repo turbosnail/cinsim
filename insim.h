@@ -611,7 +611,7 @@ struct IS_MSO // MSg Out - system messages and user messages - variable size
 
 	byte	UCID;		// connection's unique id (0 = host)
 	byte	PLID;		// player's unique id (if zero, use UCID)
-	byte	UserType;	// set if typed by a user (see User Values below) 
+	byte	UserType;	// set if typed by a user (see User Values below)
 	byte	TextStart;	// first character of the actual text (after player name)
 
 	char	Msg[128];	// 4, 8, 12... 128 characters - last byte is zero
@@ -705,7 +705,7 @@ struct IS_MTC // Msg To Connection - hosts only - send to a connection / a playe
 	byte	Sp2;
 	byte	Sp3;
 
-//	char	Text[TEXT_SIZE]; // up to 128 characters of text - last byte must be zero
+	char	Text[128]; // up to 128 characters of text - last byte must be zero
 };
 
 // Message Sounds (for Sound byte)
@@ -1589,7 +1589,7 @@ enum
 
 enum
 {
-	PENALTY_NONE,		// 0		
+	PENALTY_NONE,		// 0
 	PENALTY_DT,			// 1
 	PENALTY_DT_VALID,	// 2
 	PENALTY_SG,			// 3
@@ -1900,7 +1900,7 @@ struct CarContact // 16 bytes: one car in a contact - two of these in the IS_CON
 	byte	Info;		// like Info byte in CompCar (CCI_BLUE / CCI_YELLOW / CCI_LAG)
 	byte	Sp2;		// spare
 	char	Steer;		// front wheel steer in degrees (right positive)
-	
+
 	byte	ThrBrk;		// high 4 bits: throttle    / low 4 bits: brake (0 to 15)
 	byte	CluHan;		// high 4 bits: clutch      / low 4 bits: handbrake (0 to 15)
 	byte	GearSp;		// high 4 bits: gear (15=R) / low 4 bits: spare
@@ -2003,7 +2003,7 @@ struct IS_UCO // User Control Object
 	byte	Sp3;
 
 	unsigned	Time;	// hundredths of a second since start (as in SMALL_RTP)
-	
+
 	CarContOBJ	C;
 
 	ObjectInfo	Info;	// Info about the checkpoint or circle (see below)
@@ -2590,7 +2590,7 @@ struct IS_BTN // BuTtoN - button header - followed by 0 to 240 characters
 	byte	W;			// width  : 0 - 200
 	byte	H;			// height : 0 - 200
 
-//	char	Text[TEXT_SIZE]; // 0 to 240 characters of text
+	char	Text[TEXT_SIZE]; // 0 to 240 characters of text
 };
 
 // ClickID byte: this value is returned in IS_BTC and IS_BTT packets.
