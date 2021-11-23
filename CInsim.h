@@ -95,8 +95,8 @@ typedef struct
 #include <unistd.h>
 #endif
 
-#define PACKET_BUFFER_SIZE 512
-#define PACKET_MAX_SIZE 512
+#define PACKET_BUFFER_SIZE 1020
+#define PACKET_MAX_SIZE 1020
 #define IS_TIMEOUT 5
 
 #define IS_USE_STATIC
@@ -169,7 +169,7 @@ class CInsim
   public:
     #ifdef IS_USE_STATIC
     static CInsim* getInstance();
-    static CInsim* getInstance(const std::string hostname, const word port, const std::string product, const std::string admin, byte prefix = 0, word flags = 0, word interval = 0, word udpport = 0, byte version = 8);
+    static CInsim* getInstance(const std::string hostname, const word port, const std::string product, const std::string admin, byte prefix = 0, word flags = 0, word interval = 0, word udpport = 0, byte version = 9);
     static void removeInstance();
     #else
     CInsim();
@@ -245,5 +245,9 @@ class CInsim
 */
 
 char* ms2str (long milisecs, char *str, int thousands=0); // Converts miliseconds to a C string (including negative miliseconds).
+bool is_ascii_char(char c);  // checks if character c is 0-9 / A-Z / a-z
+bool is_valid_id(unsigned id); // return 1 if the supplied id is valid as a mod's skin ID
+bool is_official_prefix(const char* prefix);
+char* expand_prefix(const char* prefix); // fill a static buffer "char expanded_prefix[8]" and return a pointer to it
 
 #endif

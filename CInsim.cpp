@@ -407,13 +407,13 @@ int CInsim::init()
 
         switch (peek_packet())              // Check if the packet returned was an IS_VER
         {
-            case ISP_VER:                     // It was, get it!
-                IS_VER *packVer;
-                memcpy(packVer, (struct IS_VER*)get_packet(), sizeof(struct IS_VER));
-                this->hostProduct = packVer->Product;
-                this->hostVersion = packVer->Version;
-                this->hostInSimVersion = packVer->InSimVer;
-                delete packVer;
+            case ISP_VER:                    // It was, get it!
+                IS_VER packVer;
+                memcpy(&packVer, (struct IS_VER*)get_packet(), sizeof(struct IS_VER));
+                this->hostProduct = packVer.Product;
+                this->hostVersion = packVer.Version;
+                this->hostInSimVersion = packVer.InSimVer;
+
                 break;
             default:                          // It wasn't, something went wrong. Quit
                 if (disconnect() < 0) {
@@ -1317,4 +1317,59 @@ char* ms2str (long milisecs, char *str, int thousands)
 
     return str;
 }
+
+bool is_ascii_char(char c)
+{
+    if (c >= '0' && c <= '9') return true;
+    if (c >= 'A' && c <= 'Z') return true;
+    if (c >= 'a' && c <= 'z') return true;
+    return 0;
+}
+
+bool is_valid_id(unsigned id)
+{
+    if ((id & 0xff)==0        ||    // 1st char is zero
+        (id & 0xff00)==0    ||    // 2nd char is zero
+        (id & 0xff0000)==0    ||    // 3rd char is zero
+         id & 0xff000000)        // 4th char is non-zero
+    {
+        return false; // invalid
+    }
+
+    if (is_ascii_char(id & 0xff) &&
+        is_ascii_char((id & 0xff00) >> 8) &&
+        is_ascii_char((id & 0xff0000) >> 16))
+    {
+        return false; // all 3 characters are 0-9 / A-Z / a-z -> reserve this id for official cars!
+    }
+
+    return true; // ok
+}
+
+bool is_official_prefix(const char* prefix)
+{
+    return is_ascii_char(prefix[0]) && is_ascii_char(prefix[1]) && is_ascii_char(prefix[2]) && prefix[3]==0;
+}
+
+char* expand_prefix(const char* prefix)
+{
+    char expanded_prefix[8];
+
+    memset(expanded_prefix, 0, 8);
+
+    if (prefix && prefix[3]==0) // valid prefix supplied
+    {
+        if (is_official_prefix(prefix))
+        {
+            *(unsigned *)expanded_prefix = *(unsigned *)prefix; // official car - direct copy
+        }
+        else // mod
+        {
+            sprintf(expanded_prefix, "%06X", *(unsigned *)prefix); // regard the prefix as an unsigned integer and expand it as a 6-digit hexadecimal string
+        }
+    }
+
+    return expanded_prefix;
+}
+
 
