@@ -189,10 +189,7 @@ class CInsim
 
     byte    getHostVersion();
 
-    //  "int connect(...)" Establishes connection with the socket and insim.
-    //+ The last argument ch_ver is a pointer to a IS_VER struct. If it's used an IS_VER packet
-    //+ will be returned. If ch_ver is not used in the call no IS_VER will be requested/returned.
-    int init();
+    int init();                         // Establishes connection with the socket and insim.
     int disconnect();                   // Closes connection from insim and from the socket
     int next_packet();                  // Gets next packet ready into "char packet[]"
     char peek_packet();                 // Returns the type of the current packet

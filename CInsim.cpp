@@ -413,7 +413,6 @@ int CInsim::init()
                 this->hostProduct = packVer.Product;
                 this->hostVersion = packVer.Version;
                 this->hostInSimVersion = packVer.InSimVer;
-
                 break;
             default:                          // It wasn't, something went wrong. Quit
                 if (disconnect() < 0) {
@@ -475,13 +474,17 @@ int CInsim::disconnect()
 */
 int CInsim::next_packet()
 {
-    unsigned char oldp_size, p_size;
+    unsigned short oldp_size, p_size;
     bool alive = true;
 
     while (alive)                                               // Keep the connection alive!
     {
         alive = false;
         oldp_size = (unsigned char)*lbuf.buffer;
+
+        if (this->version > 8) {
+            oldp_size *= 4;
+        }
 
         if ((lbuf.bytes > 0) && (lbuf.bytes >= oldp_size)) {        // There's an old packet in the local buffer, skip it
             // Copy the leftovers from local buffer to global buffer
@@ -495,6 +498,10 @@ int CInsim::next_packet()
         }
 
         p_size = (unsigned char)*lbuf.buffer;
+
+        if (this->version > 8) {
+            p_size *= 4;
+        }
 
         while ((lbuf.bytes < p_size) || (lbuf.bytes < 1))       // Read until we have a full packet
         {
@@ -533,6 +540,9 @@ int CInsim::next_packet()
                     return -1;
 
                 p_size = *lbuf.buffer;
+                if (this->version > 8) {
+                    p_size *= 4;
+                }
                 lbuf.bytes += retval;
             }
         }
@@ -708,7 +718,13 @@ int CInsim::send_packet(void* s_packet)
             break;
     }
 
-    if (send(sock, (const char *)s_packet, *((unsigned char*)s_packet), 0) < 0)
+    size_t psize = *((unsigned char*)s_packet);
+
+    if(this->version > 8) {
+        *((unsigned char*)s_packet) = psize / 4;
+    }
+
+    if (send(sock, (const char *)s_packet, psize, 0) < 0)
     {
         ismutex->unlock();
         return -1;
