@@ -319,7 +319,7 @@ int CInsim::init()
             udp_saddr.sin_addr.s_addr = inet_addr(this->hostname.c_str());
 
         // Set the UDP port number in the UDP socket structure - we convert it from host unsigned char order, to network
-        udp_saddr.sin_port = htons(this->udpPort);
+        udp_saddr.sin_port = htons(this->tcpPort);
 
         // Connect the UDP using the same address as in the TCP socket
         if (connect(sockudp, (struct sockaddr *) &udp_saddr, sizeof(udp_saddr)) < 0) {
