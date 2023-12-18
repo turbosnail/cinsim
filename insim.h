@@ -13,7 +13,7 @@
 // NOTE: This text file was written with a TAB size equal to 4 spaces.
 
 
-// INSIM VERSION NUMBER (updated for version 0.6W)
+// INSIM VERSION NUMBER (updated for version 0.7A)
 // ====================
 
 const int INSIM_VERSION = 9;
@@ -22,12 +22,20 @@ const int INSIM_VERSION = 9;
 // CHANGES
 // =======
 
-// Version 0.6W (INSIM_VERSION increased to 9)
+// Version 0.7E
+// ------------
+// License byte added to IS_NCI packet (after Language byte)
+// IS_PLH packet sets handicaps for individual players
+// TINY_PLH - request IS_PLH listing player handicaps
+// SMALL_LCL - full control of lights including fog and extra lights
+
+// Version 0.7A (INSIM_VERSION increased to 9)
 // ------------
 // New size byte for packets - now represents packet size / 4
 // - this allows much larger packets, up to 1020 bytes
 // IS_AXM maximum objects increased to 60 (was 30) - see AXM_MAX_OBJECTS
 // IS_MCI maximum cars increased to 16 (was 8) - see MCI_MAX_CARS
+// IS_MAL / TINY_MAL - set / get list of mods allowed on host
 
 // Version 0.6V
 // ------------
@@ -94,7 +102,7 @@ const int INSIM_VERSION = 9;
 // ------------
 // Lap timing info added to IS_RST (Timing byte)
 // NLP / MCI minimum time interval reduced to 40 ms (was 50 ms)
-// IS_VTC now cancels game votes even if the majority has not been reached
+// TINY_VTC now cancels game votes even if the majority has not been reached
 // IS_MTC (Msg To Connection) now has a variable length (up to 128 characters)
 // IS_MTC can be sent to all (UCID = 255) and sound effect can be specified
 // IS_CON reports contact between two cars           (if ISF_CON is set)
@@ -301,6 +309,7 @@ enum // the second byte of any packet is one of these
 	ISP_CSC,		// 63 - info			: car state changed
 	ISP_CIM,		// 64 - info			: connection's interface mode
 	ISP_MAL,		// 65 - both ways		: set mods allowed
+	ISP_PLH,		// 66 - both ways		: set player handicaps
 };
 
 enum // the fourth byte of an IS_TINY packet is one of these
@@ -333,6 +342,7 @@ enum // the fourth byte of an IS_TINY packet is one of these
 	TINY_AXM,		// 25 - info request	: send IS_AXM packets for the entire layout
 	TINY_SLC,		// 26 - info request	: send IS_SLC packets for all connections
 	TINY_MAL,		// 27 - info request	: send IS_MAL listing the currently allowed mods
+	TINY_PLH,		// 28 - info request	: send IS_PLH listing player handicaps
 };
 
 enum // the fourth byte of an IS_SMALL packet is one of these
@@ -346,7 +356,8 @@ enum // the fourth byte of an IS_SMALL packet is one of these
 	SMALL_RTP,		//  6 - info			: race time packet (reply to GTH)
 	SMALL_NLI,		//  7 - instruction		: set node lap interval
 	SMALL_ALC,		//  8 - both ways		: set or get allowed cars (TINY_ALC)
-	SMALL_LCS,		//  9 - instruction		: set local car switches (lights, horn, siren)
+	SMALL_LCS,		//  9 - instruction		: set local car switches (flash, horn, siren)
+	SMALL_LCL,		// 10 - instruction		: set local car lights
 };
 
 enum // the fourth byte of an IS_TTC packet is one of these
@@ -742,7 +753,10 @@ struct IS_SCH // Single CHaracter
 // CAR SWITCHES
 // ============
 
-// To operate the local car's lights, horn or siren you can send this IS_SMALL:
+// To operate the local car's flash, horn or siren you can send this IS_SMALL:
+
+// NOTE: SIGNALS and HEADLIGHTS should now be set using SMALL_LCL (see CAR LIGHTS below)
+// LCS_SET_SIGNALS and LCS_SET_HEADLIGHTS have been left in SMALL_LCS for compatibility
 
 // ReqI: 0
 // SubT: SMALL_LCS		(Local Car Switches)
@@ -751,12 +765,12 @@ struct IS_SCH // Single CHaracter
 // Switches bits
 
 // Bits 0 to 7 are a set of flags specifying which values to set.  You can set as many
-// as you like at a time.  This is to allow you to set only the values you want to set
+// as you like at a time.  This allows you to set only the values you want to set
 // while leaving the others to be controlled by the user.
 
-#define LCS_SET_SIGNALS		1		// bit 0
+#define LCS_SET_SIGNALS		1		// bit 0 (should now use SMALL_LCL)
 #define LCS_SET_FLASH		2		// bit 1
-#define LCS_SET_HEADLIGHTS	4		// bit 2
+#define LCS_SET_HEADLIGHTS	4		// bit 2 (should now use SMALL_LCL)
 #define LCS_SET_HORN		8		// bit 3
 #define LCS_SET_SIREN		0x10	// bit 4
 
@@ -769,6 +783,39 @@ struct IS_SCH // Single CHaracter
 
 // bits 16-18 (Switches & 0x070000) - Horn    (0 off / 1 to 5 horn type)
 // bits 20-21 (Switches & 0x300000) - Siren   (0 off / 1 fast / 2 slow)
+
+
+// CAR LIGHTS
+// ==========
+
+// To operate the local car's lights you can send this IS_SMALL:
+
+// ReqI: 0
+// SubT: SMALL_LCL		(Local Car Lights)
+// UVal: Switches		(see below)
+
+// Switches bits
+
+// Bits 0 to 7 are a set of flags specifying which values to set.  You can set as many
+// as you like at a time.  This allows you to set only the values you want to set
+// while leaving the others to be controlled by the user.
+
+#define LCL_SET_SIGNALS		1		// bit 0
+#define LCL_SPARE_2			2		// bit 1 (do not set)
+#define LCL_SET_LIGHTS		4		// bit 2
+#define LCL_SPARE_8			8		// bit 3 (do not set)
+#define LCL_SET_FOG_REAR	0x10	// bit 4
+#define LCL_SET_FOG_FRONT	0x20	// bit 5
+#define LCL_SET_EXTRA		0x40	// bit 6
+
+// Depending on the above values, InSim will read some of the following values and try
+// to set them as required, if a real player is found on the local computer.
+
+// bits 16-17 (Switches & 0x00030000) - Signal    (0 off / 1 left / 2 right / 3 hazard)
+// bit  18-19 (Switches & 0x000c0000) - Lights    (0 off / 1 side / 2 low / 3 high)
+// bit  20    (Switches & 0x00100000) - Fog Rear
+// bit  21    (Switches & 0x00200000) - Fog Front
+// bit  22    (Switches & 0x00400000) - Extra Light
 
 
 // MULTIPLAYER NOTIFICATION
@@ -938,6 +985,35 @@ struct IS_HCP // HandiCaPs
 	CarHCP	Info[32];	// H_Mass and H_TRes for each car: XF GTI = 0 / XR GT = 1 etc
 };
 
+// Alternatively you can set handicaps per player.  These handicaps will remain until
+// the player spectates or rejoins after returning from pits or garage (an IS_NPL will
+// be sent in that case).
+
+// An output IS_PLH is sent to all InSim clients after an IS_PLH is received.  The output IS_PLH
+// contains an entry for all valid players that had handicaps updated.  An IS_PLH is also output
+// when a handicap is set by a text command /h_mass username X or /h_tres username X
+// NOTE: The 'silent' flag in bit 7 (0x80) avoids showing a message on player's screen.
+
+struct PlayerHCap // Player handicaps in 4 bytes - there is an array of these in the PLH (below)
+{
+	byte	PLID;		// player's unique id
+	byte	Flags;		// bit 0: set Mass / bit 1: set TRes (e.g. Flags=3 to set both) / bit 7: silent
+	byte	H_Mass;		// 0 to 200 - added mass (kg)
+	byte	H_TRes;		// 0 to  50 - intake restriction
+};
+
+const int PLH_MAX_PLAYERS = 40; // NOTE: Increase if MAX_CARS_S2 is increased
+
+struct IS_PLH // PLayer Handicaps - variable size
+{
+	byte	Size;		// 4 + NumP * 4
+	byte	Type;		// ISP_PLH
+	byte	ReqI;		// 0 unless this is a reply to a TINY_PLH request
+	byte	NumP;		// number of players in this packet
+
+	PlayerHCap	HCaps	[PLH_MAX_PLAYERS]; // 0 to PLH_MAX_PLAYERS (NumP)
+};
+
 
 // RACE TRACKING
 // =============
@@ -1034,7 +1110,7 @@ struct IS_NCI // New Conn Info - sent on host only if an admin password has been
 	byte	UCID;		// connection's unique id (0 = host)
 
 	byte	Language;	// see below: Languages
-	byte	Sp1;
+	byte	License;	// 0:demo / 1:S1 ...
 	byte	Sp2;
 	byte	Sp3;
 
@@ -1672,14 +1748,14 @@ const int NOT_CHANGED = 255;
 
 // Passengers byte
 
-// bit 0 female
-// bit 1 front
-// bit 2 female
-// bit 3 rear left
-// bit 4 female
-// bit 5 rear middle
-// bit 6 female
-// bit 7 rear right
+// bit 0 front male
+// bit 1 front female
+// bit 2 rear left male
+// bit 3 rear left female
+// bit 4 rear middle male
+// bit 5 rear middle female
+// bit 6 rear right male
+// bit 7 rear right female
 
 
 // TRACKING PACKET REQUESTS
@@ -2095,8 +2171,10 @@ enum
 
 // Currently the following values are supported:
 
-// AXO_START_LIGHTS (149)	// overrides temporary start lights in the layout
-#define OCO_INDEX_MAIN 240	// special value to override the main start light system
+// AXO_START_LIGHTS1	149 // layout
+// AXO_START_LIGHTS2	150 // layout
+// AXO_START_LIGHTS3	151 // layout
+#define OCO_INDEX_MAIN	240 // main start lights
 
 // Identifier byte can be used to override groups of temporary start lights
 
@@ -2798,9 +2876,25 @@ enum
 	DL_OILWARN,			// bit 8	- oil pressure warning
 	DL_BATTERY,			// bit 9	- battery warning
 	DL_ABS,				// bit 10	- ABS active or switched off
-	DL_SPARE,			// bit 11
+	DL_ENGINE,			// bit 11	- engine damage
+	DL_FOG_REAR,		// bit 12
+	DL_FOG_FRONT,		// bit 13
+	DL_DIPPED,			// bit 14	- dipped headlight symbol
+	DL_FUELWARN,		// bit 15	- low fuel warning light
+	DL_SIDELIGHTS,		// bit 16	- sidelights symbol
+	DL_NEUTRAL,			// bit 17	- neutral light
+	DL_18,
+	DL_19,
+	DL_20,
+	DL_21,
+	DL_22,
+	DL_23,
 	DL_NUM
 };
+
+// bits outside the numerical range above
+
+#define DLF_ENGINE_SEVERE	0x10000000	// set if engine damage is severe
 
 //////
 #endif
