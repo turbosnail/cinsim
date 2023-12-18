@@ -71,8 +71,8 @@ typedef struct
 #define CIS_WINDOWS
 #endif
 
-#include <stdio.h>
-#include <string.h>
+#include <cstdio>
+#include <cstring>
 #include <string>
 #include <cstdarg>
 #include <stdexcept>
@@ -100,6 +100,12 @@ typedef struct
 #define IS_TIMEOUT 5
 
 #define IS_USE_STATIC
+
+#define IS_DEBUG
+
+#ifdef IS_DEBUG
+#include <iostream>
+#endif // IS_DEBUG
 
 #define LIGHT_COLOR_RED 1
 #define LIGHT_COLOR_YELLOW 2

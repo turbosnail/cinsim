@@ -519,25 +519,56 @@ int CInsim::next_packet()
             int rc = pselect(sock + 1, &readfd, NULL, &exceptfd, &select_timeout, NULL);
             #endif
 
-            if (rc == 0)                    // Timeout
+            // Timeout
+            if (rc == 0)
+            {
+                #ifdef IS_DEBUG
+                std::cout << "CInsim::next_packet - Timeout" << std::endl;
+                #endif // IS_DEBUG
                 continue;
-
-            if (rc < 0)                     // An error occured
+            }
+            // An error occured
+            if (rc < 0)
+            {
+                #ifdef IS_DEBUG
+                std::cout << "CInsim::next_packet - An error occured" << std::endl;
+                #endif // IS_DEBUG
                 return -1;
+            }
 
-            if (FD_ISSET(sock, &exceptfd))    // An exception occured - we want to quit
+            // An exception occured - we want to quit
+            if (FD_ISSET(sock, &exceptfd))
+            {
+                #ifdef IS_DEBUG
+                std::cout << "CInsim::next_packet - An exception occured - we want to quit" << std::endl;
+                #endif // IS_DEBUG
                 return -1;
+            }
             else
             {  // We got data!
                 // Recieve any waiting bytes
                 int retval = recv(sock, lbuf.buffer + lbuf.bytes, PACKET_BUFFER_SIZE - lbuf.bytes, 0);
 
                 // Deal with the results
-                if (retval == 0)                // Connection has been closed at the other end
-                    return -2;
 
-                if (retval < 0)                 // An error ocurred
+                // Connection has been closed at the other end
+                if (retval == 0)
+                {
+                    #ifdef IS_DEBUG
+                    std::cout << "CInsim::next_packet - Connection has been closed at the other end" << std::endl;
+                    #endif // IS_DEBUG
+                    return -2;
+                }
+
+                // An error ocurred
+                if (retval < 0)
+                {
+                    #ifdef IS_DEBUG
+                    std::cout << "CInsim::next_packet - An error ocurred" << std::endl;
+                    #endif // IS_DEBUG
                     return -1;
+                }
+
 
                 p_size = *lbuf.buffer;
                 if (this->version > 8) {
@@ -560,7 +591,13 @@ int CInsim::next_packet()
 
             // Send it back
             if (send_packet(&keepalive) < 0)
+            {
+                #ifdef IS_DEBUG
+                std::cout << "CInsim::next_packet - An error ocurred at send keep alive packet" << std::endl;
+                #endif // IS_DEBUG
                 return -1;
+            }
+
         }
     }
 
