@@ -60,7 +60,7 @@ typedef struct
     float z;
 } Vector;
 
-#include "insim.h"
+
 
 /* Defines whether the Windows or Linux part of the source will be compiled.
  * Options are CIS_WINDOWS or CIS_LINUX
@@ -94,6 +94,8 @@ typedef struct
 #include <fstream>
 #include <unistd.h>
 #endif
+
+#include "insim.h"
 
 #define PACKET_BUFFER_SIZE 1020
 #define PACKET_MAX_SIZE 1020
