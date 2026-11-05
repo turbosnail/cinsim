@@ -103,8 +103,6 @@ typedef struct
 
 #define IS_USE_STATIC
 
-#define IS_DEBUG
-
 #ifdef IS_DEBUG
 #include <iostream>
 #endif // IS_DEBUG
