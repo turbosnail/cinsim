@@ -258,7 +258,7 @@ int CInsim::init()
     hp = gethostbyname(this->hostname.c_str());
 
     if (hp != nullptr)
-      saddr.sin_addr.s_addr = *((unsigned long*)hp->h_addr);
+      saddr.sin_addr.s_addr = *reinterpret_cast<unsigned long*>(hp->h_addr);
     else
       saddr.sin_addr.s_addr = inet_addr(this->hostname.c_str());
 
@@ -314,7 +314,7 @@ int CInsim::init()
 
 
         if (hp != nullptr)
-            udp_saddr.sin_addr.s_addr = *((unsigned long*)hp->h_addr);
+            udp_saddr.sin_addr.s_addr = *reinterpret_cast<unsigned long*>(hp->h_addr);
         else
             udp_saddr.sin_addr.s_addr = inet_addr(this->hostname.c_str());
 
@@ -1275,11 +1275,13 @@ char* expand_prefix(const char* prefix)
     {
         if (is_official_prefix(prefix))
         {
-            *(unsigned *)expanded_prefix = *(unsigned *)prefix; // official car - direct copy
+            memcpy(expanded_prefix, prefix, 4); // official car - direct copy
         }
         else // mod
         {
-            snprintf(expanded_prefix, sizeof(expanded_prefix), "%06X", *(unsigned *)prefix); // regard the prefix as an unsigned integer and expand it as a 6-digit hexadecimal string
+            unsigned int uid;
+            memcpy(&uid, prefix, 4);
+            snprintf(expanded_prefix, sizeof(expanded_prefix), "%06X", uid); // regard the prefix as an unsigned integer and expand it as a 6-digit hexadecimal string
         }
     }
 
