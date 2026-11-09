@@ -409,7 +409,7 @@ int CInsim::init()
         {
             case ISP_VER:                    // It was, get it!
                 IS_VER packVer;
-                memcpy(&packVer, reinterpret_cast<struct IS_VER*>(get_packet()), sizeof(struct IS_VER));
+                memcpy(&packVer, get_packet(), sizeof(IS_VER));
                 this->hostProduct = packVer.Product;
                 this->hostVersion = packVer.Version;
                 this->hostInSimVersion = packVer.InSimVer;
