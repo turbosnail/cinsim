@@ -1181,18 +1181,12 @@ CInsim::ResetCar(byte PLID, int X, int Y, int Z, word Heading, bool repair)
 */
 char* ms2str (long milisecs, char *str, int thousands)
 {
-    if (milisecs < 0)
-    {
-        snprintf(str, 14, "-");
-        milisecs *= -1;
-    }
-    else
-    {
-        str[0] = '\0';
-    }
-
     if (milisecs >= 360000000)
         return nullptr;
+
+    bool neg = (milisecs < 0);
+    if (neg)
+        milisecs *= -1;
 
     unsigned hours = milisecs / 3600000;
     unsigned minutes = (milisecs % 3600000) / 60000;
@@ -1202,33 +1196,37 @@ char* ms2str (long milisecs, char *str, int thousands)
     if (!thousands)
         hundthou /= 10;
 
+    int off = neg ? 1 : 0;
+    if (neg)
+        str[0] = '-';
+
     if (hours > 0)
     {
         if (thousands)
-            snprintf(str, 14, "%u:%02u:%02u.%03u", hours, minutes, seconds, hundthou);
+            snprintf(str + off, 14 - off, "%u:%02u:%02u.%03u", hours, minutes, seconds, hundthou);
         else
-            snprintf(str, 14, "%u:%02u:%02u.%02u", hours, minutes, seconds, hundthou);
+            snprintf(str + off, 14 - off, "%u:%02u:%02u.%02u", hours, minutes, seconds, hundthou);
     }
     else if (minutes > 0)
     {
         if (thousands)
-            snprintf(str, 14, "%u:%02u.%03u", minutes, seconds, hundthou);
+            snprintf(str + off, 14 - off, "%u:%02u.%03u", minutes, seconds, hundthou);
         else
-            snprintf(str, 14, "%u:%02u.%02u", minutes, seconds, hundthou);
+            snprintf(str + off, 14 - off, "%u:%02u.%02u", minutes, seconds, hundthou);
     }
     else if (seconds > 0)
     {
         if (thousands)
-            snprintf(str, 14, "%u.%03u", seconds, hundthou);
+            snprintf(str + off, 14 - off, "%u.%03u", seconds, hundthou);
         else
-            snprintf(str, 14, "%u.%02u", seconds, hundthou);
+            snprintf(str + off, 14 - off, "%u.%02u", seconds, hundthou);
     }
     else
     {
         if (thousands)
-            snprintf(str, 14, "0.%03u", hundthou);
+            snprintf(str + off, 14 - off, "0.%03u", hundthou);
         else
-            snprintf(str, 14, "0.%02u", hundthou);
+            snprintf(str + off, 14 - off, "0.%02u", hundthou);
     }
 
     return str;
