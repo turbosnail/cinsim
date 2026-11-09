@@ -126,12 +126,12 @@ CInsim::CInsim(const std::string hostname, const word port, const std::string na
      this->udpPort = udpport;
 
      if(name.length() > 16) {
-        throw new std::logic_error("InSim name must be less or equal than 16 chars");
+        throw std::logic_error("InSim name must be less or equal than 16 chars");
     }
     this->product = name;
 
     if(password.length() > 16) {
-        throw new std::logic_error("InSim password must be less or equal than 16 chars");
+        throw std::logic_error("InSim password must be less or equal than 16 chars");
     }
     this->password = password;
     this->prefix = prefix;
@@ -171,7 +171,7 @@ CInsim* CInsim::setUDPPort(const word port)
 CInsim* CInsim::setProduct(const std::string name)
 {
     if(name.length() > 16) {
-        throw new std::logic_error("InSim name must be less or equal than 16 chars");
+        throw std::logic_error("InSim name must be less or equal than 16 chars");
     }
     this->product = name;
     return this;
@@ -180,7 +180,7 @@ CInsim* CInsim::setProduct(const std::string name)
 CInsim* CInsim::setPassword(const std::string password)
 {
     if(password.length() > 16) {
-        throw new std::logic_error("InSim password must be less or equal than 16 chars");
+        throw std::logic_error("InSim password must be less or equal than 16 chars");
     }
     this->password = password;
     return this;
@@ -257,8 +257,8 @@ int CInsim::init()
     struct hostent *hp;
     hp = gethostbyname(this->hostname.c_str());
 
-    if (hp != NULL)
-      saddr.sin_addr.s_addr = *((unsigned long*)hp->h_addr);
+    if (hp != nullptr)
+      saddr.sin_addr.s_addr = *reinterpret_cast<unsigned long*>(hp->h_addr);
     else
       saddr.sin_addr.s_addr = inet_addr(this->hostname.c_str());
 
@@ -266,7 +266,7 @@ int CInsim::init()
     saddr.sin_port = htons(this->tcpPort);
 
     // Now the socket address structure is full, lets try to connect
-    if (connect(sock, (struct sockaddr *) &saddr, sizeof(saddr)) < 0) {
+    if (connect(sock, (sockaddr *)&saddr, sizeof(saddr)) < 0) {
       #ifdef CIS_WINDOWS
       closesocket(sock);
       WSACleanup();
@@ -307,14 +307,14 @@ int CInsim::init()
         memset(my_addr.sin_zero, '\0', sizeof my_addr.sin_zero);
 
         // don't forget your error checking for bind():
-        bind(sockudp, (struct sockaddr *)&my_addr, sizeof my_addr);
+        bind(sockudp, (sockaddr *)&my_addr, sizeof my_addr);
 
         // Set the server address and the connect to it
         udp_saddr.sin_family = AF_INET;
 
 
-        if (hp != NULL)
-            udp_saddr.sin_addr.s_addr = *((unsigned long*)hp->h_addr);
+        if (hp != nullptr)
+            udp_saddr.sin_addr.s_addr = *reinterpret_cast<unsigned long*>(hp->h_addr);
         else
             udp_saddr.sin_addr.s_addr = inet_addr(this->hostname.c_str());
 
@@ -322,7 +322,7 @@ int CInsim::init()
         udp_saddr.sin_port = htons(this->udpPort);
 
         // Connect the UDP using the same address as in the TCP socket
-        if (connect(sockudp, (struct sockaddr *) &udp_saddr, sizeof(udp_saddr)) < 0) {
+        if (connect(sockudp, (struct sockaddr *)&udp_saddr, sizeof(udp_saddr)) < 0) {
             #ifdef CIS_WINDOWS
             closesocket(sock);
             closesocket(sockudp);
@@ -409,7 +409,7 @@ int CInsim::init()
         {
             case ISP_VER:                    // It was, get it!
                 IS_VER packVer;
-                memcpy(&packVer, (struct IS_VER*)get_packet(), sizeof(struct IS_VER));
+                memcpy(&packVer, get_packet(), sizeof(IS_VER));
                 this->hostProduct = packVer.Product;
                 this->hostVersion = packVer.Version;
                 this->hostInSimVersion = packVer.InSimVer;
@@ -480,7 +480,7 @@ int CInsim::next_packet()
     while (alive)                                               // Keep the connection alive!
     {
         alive = false;
-        oldp_size = (unsigned char)*lbuf.buffer;
+        oldp_size = static_cast<unsigned char>(*lbuf.buffer);
 
         if (this->version > 8) {
             oldp_size *= 4;
@@ -497,7 +497,7 @@ int CInsim::next_packet()
             lbuf.bytes = gbuf.bytes;
         }
 
-        p_size = (unsigned char)*lbuf.buffer;
+        p_size = static_cast<unsigned char>(*lbuf.buffer);
 
         if (this->version > 8) {
             p_size *= 4;
@@ -514,9 +514,9 @@ int CInsim::next_packet()
             FD_SET(sock, &exceptfd);
 
             #ifdef CIS_WINDOWS
-            int rc = select(0, &readfd, NULL, &exceptfd, &select_timeout);
+            int rc = select(0, &readfd, nullptr, &exceptfd, &select_timeout);
             #elif defined CIS_LINUX
-            int rc = pselect(sock + 1, &readfd, NULL, &exceptfd, &select_timeout, NULL);
+            int rc = pselect(sock + 1, &readfd, nullptr, &exceptfd, &select_timeout, nullptr);
             #endif
 
             // Timeout
@@ -618,7 +618,7 @@ char CInsim::peek_packet()
 void* CInsim::get_packet()
 {
     if (peek_packet() == ISP_NONE)
-        return NULL;
+        return nullptr;
 
     return packet;
 }
@@ -645,9 +645,9 @@ int CInsim::udp_next_packet()
         FD_SET(sockudp, &udp_exceptfd);
 
         #ifdef CIS_WINDOWS
-        int rc = select(0, &udp_readfd, NULL, &udp_exceptfd, &select_timeout);
+        int rc = select(0, &udp_readfd, nullptr, &udp_exceptfd, &select_timeout);
         #elif defined CIS_LINUX
-        int rc = pselect(sockudp + 1, &udp_readfd, NULL, &udp_exceptfd, &select_timeout, NULL);
+        int rc = pselect(sockudp + 1, &udp_readfd, nullptr, &udp_exceptfd, &select_timeout, nullptr);
         #endif
 
         if (rc == 0)                    // Timeout
@@ -672,7 +672,7 @@ int CInsim::udp_next_packet()
 
     }
 
-    memcpy(udp_packet, udp_lbuf.buffer, (unsigned char)*udp_lbuf.buffer);
+    memcpy(udp_packet, udp_lbuf.buffer, static_cast<unsigned char>(*udp_lbuf.buffer));
 
     return 0;
 }
@@ -704,11 +704,11 @@ int CInsim::send_packet(void* s_packet)
     ismutex->lock();
 
     //Detect packet type
-    switch(*((unsigned char*)s_packet+1))
+    switch(*(static_cast<unsigned char *>(s_packet)+1))
     {
         case ISP_BTN:
         {
-            struct IS_BTN* pack = (struct IS_BTN*)s_packet;
+            struct IS_BTN* pack = reinterpret_cast<struct IS_BTN*>(s_packet);
             unsigned char text_len = strlen(pack->Text);
 
             /*TODO: Should we truncate the string if it's too long
@@ -735,7 +735,7 @@ int CInsim::send_packet(void* s_packet)
 
         case ISP_MTC:
         {
-            struct IS_MTC* pack = (struct IS_MTC*)s_packet;
+            struct IS_MTC* pack = reinterpret_cast<struct IS_MTC*>(s_packet);
             unsigned char text_len = strlen(pack->Text);
 
             //Same as above
@@ -755,13 +755,13 @@ int CInsim::send_packet(void* s_packet)
             break;
     }
 
-    size_t psize = *((unsigned char*)s_packet);
+    size_t psize = *(static_cast<unsigned char *>(s_packet));
 
     if(this->version > 8) {
-        *((unsigned char*)s_packet) = psize / 4;
+        *(static_cast<unsigned char *>(s_packet)) = psize / 4;
     }
 
-    if (send(sock, (const char *)s_packet, psize, 0) < 0)
+    if (send(sock, static_cast<const char *>(s_packet), psize, 0) < 0)
     {
         ismutex->unlock();
         return -1;
@@ -779,7 +779,7 @@ CInsim::SendMTC (byte UCID, std::string Msg, byte Sound)
     pack->Type = ISP_MTC;
     pack->UCID = UCID;
     pack->Sound = Sound;
-    strcpy( pack->Text, Msg.substr(0,127).c_str());
+    strncpy( pack->Text, Msg.substr(0,127).c_str(), sizeof(pack->Text) - 1 );
     send_packet( pack );
     delete pack;
 }
@@ -791,7 +791,7 @@ CInsim::SendMST (std::string Text)
     memset( pack, 0, sizeof( IS_MST));
     pack->Size = sizeof( IS_MST);
     pack->Type = ISP_MST;
-    sprintf( pack->Msg, "%.63s", Text.c_str() );
+    snprintf( pack->Msg, sizeof(pack->Msg), "%.63s", Text.c_str() );
     send_packet( pack );
     delete pack;
 }
@@ -803,7 +803,7 @@ CInsim::SendMSX(std::string Text)
     memset( pack, 0, sizeof( IS_MST ));
     pack->Size = sizeof( IS_MST );
     pack->Type = ISP_MST;
-    sprintf( pack->Msg, "%.95s", Text.c_str() );
+    snprintf( pack->Msg, sizeof(pack->Msg), "%.95s", Text.c_str() );
     send_packet( pack );
     delete pack;
 }
@@ -900,7 +900,7 @@ CInsim::SendButton(byte ReqI, byte UCID, byte ClickID, byte Left, byte Top, byte
     pack->T = Top;
     pack->W = Width;
     pack->H = Height;
-    strcpy(pack->Text, Text.c_str());
+    strncpy(pack->Text, Text.c_str(), sizeof(pack->Text) - 1 );
     send_packet( pack );
     delete pack;
 }
@@ -977,7 +977,7 @@ CInsim::GetLanguageCode(byte LID)
             return "tr";
             break;
         case LFS_CASTELLANO:
-            return "ca";
+            return "es";
             break;
         case LFS_ITALIANO:
             return "it";
@@ -1016,7 +1016,7 @@ CInsim::GetLanguageCode(byte LID)
             return "sv";
             break;
         case LFS_SLOVAK:
-            return "sl";
+            return "sk";
             break;
         case LFS_GALEGO:
             return "ga";
@@ -1113,7 +1113,7 @@ CInsim::SendJRR(byte JRRAction, byte UCID)
 {
     if(JRRAction != JRR_REJECT && JRRAction != JRR_SPAWN)
     {
-        throw new std::logic_error("SendJRR: JRRAction must be JRR_SPAWN or JRR_REJECT");
+        throw std::logic_error("SendJRR: JRRAction must be JRR_SPAWN or JRR_REJECT");
     }
 
     IS_JRR* packet = new IS_JRR;
@@ -1133,7 +1133,7 @@ CInsim::SendJRR(byte JRRAction, byte PLID, ObjectInfo obj)
 {
     if(JRRAction == JRR_REJECT || JRRAction == JRR_SPAWN)
     {
-        throw new std::logic_error("SendJRR: JRRAction must be not JRR_SPAWN and JRR_REJECT");
+        throw std::logic_error("SendJRR: JRRAction must be not JRR_SPAWN and JRR_REJECT");
     }
 
     IS_JRR* packet = new IS_JRR;
@@ -1181,191 +1181,52 @@ CInsim::ResetCar(byte PLID, int X, int Y, int Z, word Heading, bool repair)
 */
 char* ms2str (long milisecs, char *str, int thousands)
 {
-    unsigned hours = 0;
-    unsigned minutes = 0;
-    unsigned seconds = 0;
-    unsigned hundthou = 0;
-
-    char shours[3], sminutes[3], sseconds[3], shundthou[4];
-
-    memset(str, 0, 14);
-
-    if (milisecs < 0)
-    {
-        strcpy(str,"-");
-        milisecs *= -1;
-    }
-
     if (milisecs >= 360000000)
-        return 0;
+        return nullptr;
 
-    if (milisecs >= 3600000)
-    {
-        hours = milisecs / 3600000;
-        milisecs %= 3600000;
-    }
-    if (milisecs >= 60000)
-    {
-        minutes = milisecs / 60000;
-        milisecs %= 60000;
-    }
-    if (milisecs >= 1000)
-    {
-        seconds = milisecs / 1000;
-        milisecs %= 1000;
-    }
-    if (thousands)
-        hundthou = milisecs;
-    else
-        hundthou = milisecs / 10;
+    bool neg = (milisecs < 0);
+    if (neg)
+        milisecs *= -1;
 
-    if (hundthou == 0)
-    {
-        if (thousands)
-            strcpy(shundthou, "000");
-        else
-            strcpy(shundthou, "00");
-    }
+    unsigned hours = milisecs / 3600000;
+    unsigned minutes = (milisecs % 3600000) / 60000;
+    unsigned seconds = (milisecs % 60000) / 1000;
+    unsigned hundthou = milisecs % 1000;
+
+    if (!thousands)
+        hundthou /= 10;
+
+    int off = neg ? 1 : 0;
+    if (neg)
+        str[0] = '-';
 
     if (hours > 0)
     {
-        sprintf(shours,"%d",hours);
-        strcat(strcat(str,shours),":");
-
-        if (minutes > 9)
-            sprintf(sminutes,"%d",minutes);
-        else{
-            strcpy(sminutes,"0");
-            sprintf(sminutes+1,"%d",minutes);
-        }
-        strcat(strcat(str,sminutes),":");
-
-        if (seconds > 9)
-            sprintf(sseconds,"%d",seconds);
-        else{
-            strcpy(sseconds,"0");
-            sprintf(sseconds+1,"%d",seconds);
-        }
-        strcat(strcat(str,sseconds),".");
-
         if (thousands)
-        {
-            if (hundthou > 99)
-                sprintf(shundthou,"%d",hundthou);
-            else if (hundthou > 9){
-                strcpy(shundthou,"0");
-                sprintf(shundthou+1,"%d",hundthou);
-            }
-            else{
-                strcpy(shundthou,"00");
-                sprintf(shundthou+2,"%d",hundthou);
-            }
-        }
+            snprintf(str + off, 14 - off, "%u:%02u:%02u.%03u", hours, minutes, seconds, hundthou);
         else
-        {
-            if (hundthou > 9)
-                sprintf(shundthou,"%d",hundthou);
-            else{
-                strcpy(shundthou,"0");
-                sprintf(shundthou+1,"%d",hundthou);
-            }
-        }
-        strcat(str,shundthou);
-
+            snprintf(str + off, 14 - off, "%u:%02u:%02u.%02u", hours, minutes, seconds, hundthou);
     }
     else if (minutes > 0)
     {
-        sprintf(sminutes,"%d",minutes);
-        strcat(strcat(str,sminutes),":");
-
-        if (seconds > 9)
-            sprintf(sseconds,"%d",seconds);
-        else{
-            strcpy(sseconds,"0");
-            sprintf(sseconds+1,"%d",seconds);
-        }
-        strcat(strcat(str,sseconds),".");
-
         if (thousands)
-        {
-            if (hundthou > 99)
-                sprintf(shundthou,"%d",hundthou);
-            else if (hundthou > 9){
-                strcpy(shundthou,"0");
-                sprintf(shundthou+1,"%d",hundthou);
-            }
-            else{
-                strcpy(shundthou,"00");
-                sprintf(shundthou+2,"%d",hundthou);
-            }
-        }
+            snprintf(str + off, 14 - off, "%u:%02u.%03u", minutes, seconds, hundthou);
         else
-        {
-            if (hundthou > 9)
-                sprintf(shundthou,"%d",hundthou);
-            else{
-                strcpy(shundthou,"0");
-                sprintf(shundthou+1,"%d",hundthou);
-            }
-        }
-        strcat(str,shundthou);
+            snprintf(str + off, 14 - off, "%u:%02u.%02u", minutes, seconds, hundthou);
     }
     else if (seconds > 0)
     {
-        sprintf(sseconds,"%d",seconds);
-        strcat(strcat(str,sseconds),".");
-
         if (thousands)
-        {
-            if (hundthou > 99)
-                sprintf(shundthou,"%d",hundthou);
-            else if (hundthou > 9){
-                strcpy(shundthou,"0");
-                sprintf(shundthou+1,"%d",hundthou);
-            }
-            else{
-                strcpy(shundthou,"00");
-                sprintf(shundthou+2,"%d",hundthou);
-            }
-        }
+            snprintf(str + off, 14 - off, "%u.%03u", seconds, hundthou);
         else
-        {
-            if (hundthou > 9)
-                sprintf(shundthou,"%d",hundthou);
-            else{
-                strcpy(shundthou,"0");
-                sprintf(shundthou+1,"%d",hundthou);
-            }
-        }
-        strcat(str,shundthou);
+            snprintf(str + off, 14 - off, "%u.%02u", seconds, hundthou);
     }
     else
     {
-        strcat(str,"0.");
-
         if (thousands)
-        {
-            if (hundthou > 99)
-                sprintf(shundthou,"%d",hundthou);
-            else if (hundthou > 9){
-                strcpy(shundthou,"0");
-                sprintf(shundthou+1,"%d",hundthou);
-            }
-            else{
-                strcpy(shundthou,"00");
-                sprintf(shundthou+2,"%d",hundthou);
-            }
-        }
+            snprintf(str + off, 14 - off, "0.%03u", hundthou);
         else
-        {
-            if (hundthou > 9)
-                sprintf(shundthou,"%d",hundthou);
-            else{
-                strcpy(shundthou,"0");
-                sprintf(shundthou+1,"%d",hundthou);
-            }
-        }
-        strcat(str,shundthou);
+            snprintf(str + off, 14 - off, "0.%02u", hundthou);
     }
 
     return str;
@@ -1414,11 +1275,13 @@ char* expand_prefix(const char* prefix)
     {
         if (is_official_prefix(prefix))
         {
-            *(unsigned *)expanded_prefix = *(unsigned *)prefix; // official car - direct copy
+            memcpy(expanded_prefix, prefix, 4); // official car - direct copy
         }
         else // mod
         {
-            sprintf(expanded_prefix, "%06X", *(unsigned *)prefix); // regard the prefix as an unsigned integer and expand it as a 6-digit hexadecimal string
+            unsigned int uid;
+            memcpy(&uid, prefix, 4);
+            snprintf(expanded_prefix, sizeof(expanded_prefix), "%06X", uid); // regard the prefix as an unsigned integer and expand it as a 6-digit hexadecimal string
         }
     }
 
