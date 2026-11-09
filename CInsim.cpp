@@ -266,7 +266,7 @@ int CInsim::init()
     saddr.sin_port = htons(this->tcpPort);
 
     // Now the socket address structure is full, lets try to connect
-    if (connect(sock, static_cast<struct sockaddr *>(&saddr), sizeof(saddr)) < 0) {
+    if (connect(sock, (sockaddr *)&saddr, sizeof(saddr)) < 0) {
       #ifdef CIS_WINDOWS
       closesocket(sock);
       WSACleanup();
@@ -307,7 +307,7 @@ int CInsim::init()
         memset(my_addr.sin_zero, '\0', sizeof my_addr.sin_zero);
 
         // don't forget your error checking for bind():
-        bind(sockudp, static_cast<struct sockaddr *>(&my_addr), sizeof my_addr);
+        bind(sockudp, (sockaddr *)&my_addr, sizeof my_addr);
 
         // Set the server address and the connect to it
         udp_saddr.sin_family = AF_INET;
@@ -322,7 +322,7 @@ int CInsim::init()
         udp_saddr.sin_port = htons(this->udpPort);
 
         // Connect the UDP using the same address as in the TCP socket
-        if (connect(sockudp, static_cast<struct sockaddr *>(&udp_saddr), sizeof(udp_saddr)) < 0) {
+        if (connect(sockudp, (struct sockaddr *)&udp_saddr, sizeof(udp_saddr)) < 0) {
             #ifdef CIS_WINDOWS
             closesocket(sock);
             closesocket(sockudp);
