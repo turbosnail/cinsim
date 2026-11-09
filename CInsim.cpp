@@ -1016,13 +1016,13 @@ CInsim::GetLanguageCode(byte LID)
             return "sv";
             break;
         case LFS_SLOVAK:
-            return "sl";
+            return "sk";
             break;
         case LFS_GALEGO:
             return "ga";
             break;
         case LFS_SLOVENSKI:
-            return "st";
+            return "sl";
             break;
         case LFS_BELARUSSIAN:
             return "be";
